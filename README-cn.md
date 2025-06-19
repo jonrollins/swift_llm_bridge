@@ -68,10 +68,6 @@ iOS 版本的 LLM Bridge 提供针对移动环境优化的界面。
 - **滑动手势**: 消息删除和管理
 - **相机集成**: 照片拍摄和图像分析
 
-![iOS 主屏幕](iphone.png)
-
-![iOS 详细屏幕](iphone_detail.png)
-
 #### iOS 截图画廊
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">

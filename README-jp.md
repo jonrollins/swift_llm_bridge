@@ -68,10 +68,6 @@ iOS版LLM Bridgeは、モバイル環境に最適化されたインターフェ�
 - **スワイプジェスチャー**: メッセージ削除と管理
 - **カメラ統合**: 写真撮影と画像解析
 
-![iOSメイン画面](iphone.png)
-
-![iOS詳細画面](iphone_detail.png)
-
 #### iOSスクリーンショットギャラリー
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">

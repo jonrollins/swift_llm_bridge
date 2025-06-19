@@ -68,10 +68,6 @@ iOS version of LLM Bridge provides an interface optimized for mobile environment
 - **Swipe Gestures**: Message deletion and management
 - **Camera Integration**: Photo capture and image analysis
 
-![iOS Main Screen](iphone.png)
-
-![iOS Detail Screen](iphone_detail.png)
-
 #### iOS Screenshot Gallery
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
