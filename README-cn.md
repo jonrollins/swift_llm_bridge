@@ -75,17 +75,17 @@ iOS 版本的 LLM Bridge 提供针对移动环境优化的界面。
 #### iOS 截图画廊
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="resources/screen/iphone/iphone01.png" width="200" alt="iOS 屏幕 1">
-  <img src="resources/screen/iphone/iphone02.png" width="200" alt="iOS 屏幕 2">
-  <img src="resources/screen/iphone/iphone03.png" width="200" alt="iOS 屏幕 3">
-  <img src="resources/screen/iphone/iphone04.png" width="200" alt="iOS 屏幕 4">
-  <img src="resources/screen/iphone/iphone05.png" width="200" alt="iOS 屏幕 5">
-  <img src="resources/screen/iphone/iphone06.png" width="200" alt="iOS 屏幕 6">
-  <img src="resources/screen/iphone/iphone07.png" width="200" alt="iOS 屏幕 7">
-  <img src="resources/screen/iphone/iphone08.png" width="200" alt="iOS 屏幕 8">
-  <img src="resources/screen/iphone/iphone09.png" width="200" alt="iOS 屏幕 9">
-  <img src="resources/screen/iphone/iphone10.png" width="200" alt="iOS 屏幕 10">
-  <img src="resources/screen/iphone/iphone11.png" width="200" alt="iOS 屏幕 11">
+  <img src="iphone10.png" width="200">
+  <img src="iphone01.png" width="200">
+  <img src="iphone02.png" width="200">
+  <img src="iphone03.png" width="200">
+  <img src="iphone04.png" width="200">
+  <img src="iphone05.png" width="200">
+  <img src="iphone06.png" width="200">
+  <img src="iphone07.png" width="200">
+  <img src="iphone08.png" width="200">
+  <img src="iphone09.png" width="200">
+  <img src="iphone11.png" width="200">
 </div>
 
 ## 使用方法
