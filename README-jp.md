@@ -2,7 +2,7 @@
 
 _Ollama、LM Studio、Claude、OpenAIをサポートするマルチプラットフォームLLMクライアント_
 
-[한국어](README.md) • [English](README-en.md) • [日本語](README-jp.md) • [中文](README-cn.md)
+[한국어](README-ko.md) • [English](README.md) • [日本語](README-jp.md) • [中文](README-cn.md)
 
 # LLM Bridge
 

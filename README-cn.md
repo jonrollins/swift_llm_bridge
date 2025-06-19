@@ -2,7 +2,7 @@
 
 _支持 Ollama、LM Studio、Claude 和 OpenAI 的多平台 LLM 客户端_
 
-[한국어](README.md) • [English](README-en.md) • [日本語](README-jp.md) • [中文](README-cn.md)
+[한국어](README-ko.md) • [English](README.md) • [日本語](README-jp.md) • [中文](README-cn.md)
 
 # LLM Bridge
 
