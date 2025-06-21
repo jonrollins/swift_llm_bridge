@@ -5,6 +5,7 @@
   Created by BillyPark on 2/3/25.
   
 */
+"llm_bridge" = "LLM 브릿지";
 "l_new_conversation" = "새 대화 시작하기";
 "l_new" = "신규";
 "l_copy" = "복사";
@@ -89,3 +90,4 @@
 "l_take_photo" = "사진찍기";
 "l_choose_files" = "파일선택";
 "l_delete_all_warning" = "모든 대화 내역이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.";
+"l_no_saved_conv" = "저장된 대화가 없습니다.\n\n대화를 시작하려면 [설정]으로 진입해서\nLLM 서버의 주소 또는 Api키를 입력하고\n새대화를 시작할수 있습니다";

@@ -5,6 +5,7 @@
   Created by BillyPark on 2/3/25.
   
 */
+"llm_bridge" = "LLM Bridge";
 "l_new_conversation" = "新对话";
 "l_new" = "新建";
 "l_copy" = "复制";
@@ -88,3 +89,4 @@
 "l_take_photo" = "拍照";
 "l_choose_files" = "选择文件";
 "l_delete_all_warning" = "所有对话历史记录将被永久删除。此操作无法撤消。";
+"l_no_saved_conv" = "没有已保存的对话。\n\n要开始对话，请转至[设置]\n输入 LLM 服务器的地址或 Api 密钥\n并开始新的对话";

@@ -5,6 +5,7 @@
   Created by BillyPark on 2/3/25.
   
 */
+"llm_bridge" = "LLMブリッジ";
 "l_new_conversation" = "新しい会話を始める";
 "l_new" = "新規";
 "l_copy" = "コピー";
@@ -88,3 +89,4 @@
 "l_take_photo" = "写真を撮る";
 "l_choose_files" = "ファイルを選択";
 "l_delete_all_warning" = "すべての会話履歴が永久に削除されます。この操作は元に戻せません。";
+"l_no_saved_conv" = "保存された会話がありません\n\n会話を開始するには、[設定]に入り、\nLLMサーバーのアドレスまたはApiキーを入力して\n新しい会話を開始できます。";

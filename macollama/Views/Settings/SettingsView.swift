@@ -2,14 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var isPresented: Bool
-    @State private var serverAddress: String = UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
-    @State private var originalServerAddress: String = UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
+    @State private var serverAddress: String = UserDefaults.standard.string(forKey: "ollama_base_url") ?? "http://localhost:11434"
     @State private var lmStudioAddress: String = UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
-    @State private var originalLMStudioAddress: String = UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
     @State private var claudeApiKey: String = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
-    @State private var originalClaudeApiKey: String = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
     @State private var openaiApiKey: String = UserDefaults.standard.string(forKey: "openaiApiKey") ?? ""
-    @State private var originalOpenaiApiKey: String = UserDefaults.standard.string(forKey: "openaiApiKey") ?? ""
     @AppStorage("showOllama") private var showOllama: Bool = true
     @AppStorage("showLMStudio") private var showLMStudio: Bool = false
     @AppStorage("showClaude") private var showClaude: Bool = false
@@ -339,15 +335,11 @@ struct SettingsView: View {
             Text("l_delete_all_question".localized)
         }
         .onAppear {
-            originalServerAddress = serverAddress
-            originalLMStudioAddress = lmStudioAddress
-            originalClaudeApiKey = claudeApiKey
-            originalOpenaiApiKey = openaiApiKey
         }
     }
     
     private func saveSettings() {
-        UserDefaults.standard.set(serverAddress, forKey: "serverAddress")
+        UserDefaults.standard.set(serverAddress, forKey: "ollama_base_url")
         UserDefaults.standard.set(lmStudioAddress, forKey: "lmStudioAddress")
         UserDefaults.standard.set(claudeApiKey, forKey: "claudeApiKey")
         UserDefaults.standard.set(openaiApiKey, forKey: "openaiApiKey")

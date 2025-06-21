@@ -21,7 +21,7 @@ class LLMService: ObservableObject {
         let provider = LLMProvider(rawValue: UserDefaults.standard.string(forKey: "selectedProvider") ?? "OLLAMA") ?? .ollama
         switch provider {
         case .ollama:
-            return UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
+            return UserDefaults.standard.string(forKey: "ollama_base_url") ?? "http://localhost:11434"
         case .lmstudio:
             return UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
         case .claude:
@@ -72,7 +72,7 @@ class LLMService: ObservableObject {
             )
         default:
             apiKey = nil
-            let baseURLString = UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
+            let baseURLString = UserDefaults.standard.string(forKey: "ollama_base_url") ?? "http://localhost:11434"
             let url = URL(string: baseURLString) ?? URL(string: "http://localhost:11434")!
             let host = url.host ?? "localhost"
             let port = url.port ?? (currentTarget == .lmstudio ? 1234 : 11434)

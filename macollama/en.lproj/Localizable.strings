@@ -5,6 +5,7 @@
   Created by BillyPark on 2/3/25.
   
 */
+"llm_bridge" = "LLM Bridge";
 "l_new_conversation" = "New Conversation";
 "l_new" = "New";
 "l_copy" = "Copy";
@@ -88,3 +89,4 @@
 "l_take_photo" = "Take Photo";
 "l_choose_files" = "Choose Files";
 "l_delete_all_warning" = "All conversation history will be permanently deleted. This action cannot be undone.";
+"l_no_saved_conv" = "There are no saved conversations.\n\nTo start a conversation, go to [Settings]\nEnter the address of the LLM server or the Api key\nand start a new conversation";

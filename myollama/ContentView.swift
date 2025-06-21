@@ -121,20 +121,28 @@ struct ContentView: View {
                             .padding(.horizontal)
                         }
                         
-                        // 채팅 목록
-                        LazyVStack(spacing: 8) {
-                            ForEach(viewModel.chatTitles) { chat in
-                                ChatRowView(chat: chat, onTap: {
-                                    navigationPath.append("chat:\(chat.groupId)")
-                                }, onDelete: {
-                                    Task {
-                                        try? await viewModel.deleteChat(groupId: chat.groupId)
-                                        if chatViewModel.chatId.uuidString == chat.groupId {
-                                            chatViewModel.startNewChat()
+                        if (viewModel.chatTitles.isEmpty) {
+                            Text("l_no_saved_conv".localized)
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
+                                .padding()
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            LazyVStack(spacing: 8) {
+                                ForEach(viewModel.chatTitles) { chat in
+                                    ChatRowView(chat: chat, onTap: {
+                                        navigationPath.append("chat:\(chat.groupId)")
+                                    }, onDelete: {
+                                        Task {
+                                            try? await viewModel.deleteChat(groupId: chat.groupId)
+                                            if chatViewModel.chatId.uuidString == chat.groupId {
+                                                chatViewModel.startNewChat()
+                                            }
                                         }
-                                    }
-                                })
-                                .padding(.horizontal)
+                                    })
+                                    .padding(.horizontal)
+                                }
                             }
                         }
                     }
@@ -143,7 +151,7 @@ struct ContentView: View {
             .refreshable {
                 await viewModel.loadChatTitles()
             }
-            .navigationTitle("LLM Bridge")
+            .navigationTitle("llm_bridge".localized)
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: String.self) { destination in
                 if destination == "SettingsView" {
@@ -151,7 +159,7 @@ struct ContentView: View {
                 } else if destination == "newChat" {
                     ChatDetailView()
                 } else if destination.hasPrefix("chat:") {
-                    let groupId = String(destination.dropFirst(5)) 
+                    let groupId = String(destination.dropFirst(5))
                     ChatDetailView()
                         .onAppear {
                             chatViewModel.loadChat(groupId: groupId)

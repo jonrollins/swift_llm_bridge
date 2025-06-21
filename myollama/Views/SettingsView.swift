@@ -12,14 +12,10 @@ import Toasts
 struct SettingsView: View {
     @Environment(\.presentToast) var presentToast
     @Environment(\.dismiss) private var dismiss
-    @State private var serverAddress: String = UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
-    @State private var originalServerAddress: String = UserDefaults.standard.string(forKey: "serverAddress") ?? "http://localhost:11434"
+    @State private var serverAddress: String = UserDefaults.standard.string(forKey: "ollama_base_url") ?? "http://localhost:11434"
     @State private var lmStudioAddress: String = UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
-    @State private var originalLMStudioAddress: String = UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
     @State private var claudeApiKey: String = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
-    @State private var originalClaudeApiKey: String = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
     @State private var openaiApiKey: String = UserDefaults.standard.string(forKey: "openaiApiKey") ?? ""
-    @State private var originalOpenaiApiKey: String = UserDefaults.standard.string(forKey: "openaiApiKey") ?? ""
     @AppStorage("selectedProvider") private var selectedProvider: LLMProvider = .ollama
     @State private var llmInstruction: String = UserDefaults.standard.string(forKey: "llmInstruction") ?? "You are a helpful assistant."
     @State private var temperature: Double = UserDefaults.standard.double(forKey: "temperature")
@@ -30,6 +26,10 @@ struct SettingsView: View {
     @State private var connectionTestResult: String?
     @State private var isTestingLMStudioConnection = false
     @State private var lmStudioConnectionTestResult: String?
+    
+    @State private var appVersion = ""
+    @State private var buildNumber = ""
+
     
     private func changeProvider() {
         LLMService.shared.refreshForProviderChange()
@@ -317,7 +317,7 @@ struct SettingsView: View {
                             Divider()
                             
                             Button("l_reset_llm_settings".localized) {
-                                UserDefaults.standard.set("http://192.168.1.100:11434", forKey: "serverAddress")
+                                UserDefaults.standard.set("http://192.168.1.100:11434", forKey: "ollama_base_url")
                                 UserDefaults.standard.set("http://192.168.1.100:1234", forKey: "lmStudioAddress")
                                 UserDefaults.standard.set("", forKey: "claudeApiKey")
                                 UserDefaults.standard.set("", forKey: "openaiApiKey")
@@ -395,7 +395,7 @@ struct SettingsView: View {
                             .foregroundColor(.blue)
                         Text("l_version".localized)
                         Spacer()
-                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")
+                        Text("\(appVersion) (\(buildNumber))")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -441,10 +441,17 @@ struct SettingsView: View {
             Text("l_delete_all_warning".localized)
         }
         .onAppear {
-            originalServerAddress = serverAddress
-            originalLMStudioAddress = lmStudioAddress
-            originalClaudeApiKey = claudeApiKey
-            originalOpenaiApiKey = openaiApiKey
+            loadAppVersion()
+        }
+    }
+    
+    private func loadAppVersion() {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            self.appVersion = version
+        }
+        
+        if let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            self.buildNumber = build
         }
     }
     
@@ -453,7 +460,7 @@ struct SettingsView: View {
     }
     
     private func saveSettings() {
-        UserDefaults.standard.set(serverAddress, forKey: "serverAddress")
+        UserDefaults.standard.set(serverAddress, forKey: "ollama_base_url")
         UserDefaults.standard.set(lmStudioAddress, forKey: "lmStudioAddress")
         UserDefaults.standard.set(claudeApiKey, forKey: "claudeApiKey")
         UserDefaults.standard.set(openaiApiKey, forKey: "openaiApiKey")
