@@ -4,6 +4,7 @@ struct ChatTitle: Identifiable, Equatable {
     let id: Int
     let groupId: String
     let question: String
+    let answer: String?
     let created: String
     let engine: String
     let image: String?
@@ -23,6 +24,7 @@ struct ChatTitle: Identifiable, Equatable {
         return lhs.id == rhs.id &&
                lhs.groupId == rhs.groupId &&
                lhs.question == rhs.question &&
+               lhs.answer == rhs.answer &&
                lhs.created == rhs.created &&
                lhs.engine == rhs.engine &&
                lhs.image == rhs.image

@@ -14,6 +14,7 @@ class SidebarViewModel: ObservableObject {
                     id: result.id,
                     groupId: result.groupId,
                     question: result.question,
+                    answer: result.answer,
                     created: result.created,
                     engine: result.engine,
                     image: result.image
@@ -43,6 +44,7 @@ class SidebarViewModel: ObservableObject {
                     id: result.id,
                     groupId: result.groupId,
                     question: result.question,
+                    answer: result.answer,
                     created: result.created,
                     engine: result.engine,
                     image: result.image
