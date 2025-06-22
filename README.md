@@ -159,7 +159,7 @@ iOS version of LLM Bridge provides an interface optimized for mobile environment
 For those who have difficulty building, you can download the app from the links below.
 
 * **macOS**: [Mac App Store](https://apps.apple.com/us/app/mac-ollama-client/id6741420139)
-* **iOS**: [App Store](https://apps.apple.com/kr/app/llm-hippo/id6741420139)
+* **iOS**: [App Store](https://apps.apple.com/us/app/llm-bridge-multi-llm-client/id6738298481?platform=iphone)
 
 ## License
 
