@@ -54,65 +54,68 @@ struct MessageBubble: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            VStack(alignment: .leading, spacing: 8) {
-                if let image = message.image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 100)
-                        .cornerRadius(8)
+            if let image = message.image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 100)
+                    .cornerRadius(8)
+            }
+            
+            if !message.isUser && message.content.trimmingCharacters(in: .whitespacesAndNewlines) == "..." {
+                HStack {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("l_waiting".localized)
+                        .foregroundColor(.gray)
+                        .font(.caption)
                 }
-                
-                if !message.isUser && message.content.trimmingCharacters(in: .whitespacesAndNewlines) == "..." {
-                    HStack {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("l_waiting".localized)
-                            .foregroundColor(.gray)
-                            .font(.caption)
-                    }
-                    .frame(height: 20)
-                } else {
-                    if !message.isUser {
-                        SelectableText(text: message.content)
+                .frame(height: 20)
+            } else {
+                if !message.isUser {
+                    SelectableText(text: message.content)
+                        .padding(20)
+                        .background(Color.orange.opacity(0.3))
+                        .foregroundColor(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        HStack {
-                            HoverImageButton(imageName: "arrow.counterclockwise.square") {
-                                if !message.isUser {
-                                    if let currentIndex = viewModel.messages.firstIndex(where: { $0.id == message.id }),
-                                       currentIndex > 0 {
-                                        let previousMessage = viewModel.messages[currentIndex - 1]
-                                        if previousMessage.isUser {
-                                            viewModel.startNewChat()
-                                            viewModel.messageText = previousMessage.content
-                                            if let image = previousMessage.image {
-                                                viewModel.selectedImage = image
-                                            }
-                                            viewModel.shouldFocusTextField = true
+                    HStack {
+                        HoverImageButton(imageName: "arrow.counterclockwise.square") {
+                            if !message.isUser {
+                                if let currentIndex = viewModel.messages.firstIndex(where: { $0.id == message.id }),
+                                   currentIndex > 0 {
+                                    let previousMessage = viewModel.messages[currentIndex - 1]
+                                    if previousMessage.isUser {
+                                        viewModel.startNewChat()
+                                        viewModel.messageText = previousMessage.content
+                                        if let image = previousMessage.image {
+                                            viewModel.selectedImage = image
                                         }
+                                        viewModel.shouldFocusTextField = true
                                     }
                                 }
                             }
-                            HoverImageButton(imageName: "square.on.square"){
-                                copyToClipboard()
-                            }
-                            HoverImageButton(imageName: "square.and.arrow.down"){
-                                shareContent()
-                            }
-                            HoverImageButton(imageName: "trash"){
-                                showingDeleteAlert = true
-                            }
                         }
-                        .foregroundColor(.gray)
-                    } else {
-                        SelectableText(text: message.content)
+                        HoverImageButton(imageName: "square.on.square"){
+                            copyToClipboard()
+                        }
+                        HoverImageButton(imageName: "square.and.arrow.down"){
+                            shareContent()
+                        }
+                        HoverImageButton(imageName: "trash"){
+                            showingDeleteAlert = true
+                        }
                     }
+                    .foregroundColor(.gray)
+                } else {
+                    SelectableText(text: message.content)
+                        .padding(20)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .foregroundColor(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
                 }
             }
-            .padding(12)
-            .background(message.isUser ? Color(NSColor.textBackgroundColor) : Color.orange.opacity(0.3))
-            .foregroundColor(message.isUser ? .primary : .white)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
 
             if !message.isUser {
                 Text(message.formattedTime)

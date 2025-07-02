@@ -192,21 +192,6 @@ class LLMService: ObservableObject {
                         }
                     }
                     
-                    let endTime = Date()
-                    let timeElapsed = endTime.timeIntervalSince(startTime)
-                    let tokensPerSecond = timeElapsed > 0 ? Double(tokenCount) / timeElapsed : 0
-                    
-                    let finalModelCheck = hasModelInfo || currentResponse.contains("**[\(selectedModel)]**") || currentResponse.contains("[\(selectedModel)]")
-                    let finalTokenCheck = hasTokenInfo || currentResponse.contains("tokens/sec") || currentResponse.contains("Performance:")
-                    
-                    if !finalModelCheck {
-                        continuation.yield("\n\n**[\(selectedModel)]**")
-                    }
-                    
-                    if !finalTokenCheck {
-                        continuation.yield("\n   \(String(format: "%.1f", tokensPerSecond)) tokens/sec")
-                    }
-                    
                     continuation.finish()
                     
                 } catch {

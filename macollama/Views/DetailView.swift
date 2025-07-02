@@ -18,11 +18,6 @@ struct DetailView: View {
                         ForEach(viewModel.messages) { message in
                             VStack(alignment: .trailing, spacing: 4) {
                                 MessageBubble(message: message)
-                                if message.isUser {
-                                    Text(message.formattedTime)
-                                        .font(.caption2)
-                                        .foregroundColor(.gray)
-                                }
                             }
                             .id(message.id)
                         }
@@ -120,10 +115,11 @@ struct DetailView: View {
                     }
                 }
                 
+                var statsMessage = ""
                 if let startTime = responseStartTime {
                     let elapsedTime = Date().timeIntervalSince(startTime)
                     let tokensPerSecond = Double(tokenCount) / elapsedTime
-                    let statsMessage = "\n\n---\n \(String(format: "%.1f", tokensPerSecond)) tokens/sec"
+                    statsMessage = "\n\n---\n [\(selectedModel)] \(String(format: "%.1f", tokensPerSecond)) tokens/sec"
                     
                     if let index = viewModel.messages.lastIndex(where: { !$0.isUser }) {
                         let updatedMessage = ChatMessage(
@@ -142,7 +138,7 @@ struct DetailView: View {
                     groupId: viewModel.chatId.uuidString,
                     instruction: UserDefaults.standard.string(forKey: "llmInstruction") ?? "",
                     question: currentText,
-                    answer: fullResponse,
+                    answer: fullResponse + statsMessage,
                     image: currentImage,
                     engine: selectedModel
                 )
