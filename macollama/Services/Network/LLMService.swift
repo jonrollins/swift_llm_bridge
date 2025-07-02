@@ -171,25 +171,10 @@ class LLMService: ObservableObject {
                         model: selectedModel
                     )
                     
-                    var tokenCount = 0
-                    let startTime = Date()
-                    var hasModelInfo = false
-                    var hasTokenInfo = false
-                    
                     for try await chunk in stream {
                         if Task.isCancelled { break }
                         currentResponse += chunk
                         continuation.yield(chunk)
-                        
-                        let words = chunk.split(separator: " ").count
-                        tokenCount += max(1, words)
-                        
-                        if chunk.contains("**[\(selectedModel)]**") || chunk.contains("[\(selectedModel)]") {
-                            hasModelInfo = true
-                        }
-                        if chunk.contains("tokens/sec") || chunk.contains("Performance:") {
-                            hasTokenInfo = true
-                        }
                     }
                     
                     continuation.finish()
