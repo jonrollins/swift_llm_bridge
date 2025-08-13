@@ -202,44 +202,56 @@ public class LLMBridge: ObservableObject {
             defer { isLoading = false }
             
             do {
-                let endpoint = getChatEndpoint()
+                let endpoint = getChatEndpoint(forModel: selectedModel)
                 let requestURL = baseURL.appendingPathComponent(endpoint)
                 var request = URLRequest(url: requestURL)
                 request.httpMethod = "POST"
                 request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                if target == .lmstudio {
-                    request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                    request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+
+                // gpt-5는 비스트리밍으로 처리
+                if target == .openai, selectedModel.lowercased().contains("gpt-5") {
+                    let text = try await self.fetchOpenAIResponses(content: content, model: selectedModel, image: image)
+                    tempResponse = text
                 } else {
-                    request.addValue("application/json", forHTTPHeaderField: "Accept")
-                }
-                
-                if target == .claude {
-                    guard let key = apiKey else {
-                        throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "Claude API key is required"])
+                    if target == .lmstudio {
+                        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+                        request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                    } else {
+                        request.addValue("application/json", forHTTPHeaderField: "Accept")
                     }
-                    request.addValue("\(key)", forHTTPHeaderField: "x-api-key")
-                    request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-                    request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                }
-                
-                if target == .openai {
-                    guard let key = apiKey else {
-                        throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "OpenAI API key is required"])
+                    
+                    if target == .claude {
+                        guard let key = apiKey else {
+                            throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "Claude API key is required"])
+                        }
+                        request.addValue("\(key)", forHTTPHeaderField: "x-api-key")
+                        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+                        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
                     }
-                    request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-                    request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                    request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                    
+                    if target == .openai {
+                        guard let key = apiKey else {
+                            throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "OpenAI API key is required"])
+                        }
+                        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+                        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+                        request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                        if request.url?.path.contains("/v1/responses") == true {
+                            request.addValue("responses-2024-12-17", forHTTPHeaderField: "OpenAI-Beta")
+                        }
+                    }
+                    
+                    request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                    request.timeoutInterval = 300.0
+                    
+                    let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
+                    request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+                    if target == .openai, request.url?.path.contains("/v1/responses") == true, let body = request.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
+                        print("[LLMBridge] OpenAI Responses payload:", bodyStr)
+                    }
+                    
+                    try await self.processStream(request: request)
                 }
-                
-                request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
-                request.timeoutInterval = 300.0
-                
-                let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
-                                
-                try await self.processStream(request: request)
                 
                 if !tempResponse.isEmpty {
                     let message = Message(content: tempResponse, isUser: false, image: nil, timestamp: Date())
@@ -292,44 +304,76 @@ public class LLMBridge: ObservableObject {
                     }
                     
                     do {
-                        let endpoint = getChatEndpoint()
+                        // 사전 요청 객체 생성
+                        let endpoint = getChatEndpoint(forModel: selectedModel)
                         let requestURL = baseURL.appendingPathComponent(endpoint)
                         var request = URLRequest(url: requestURL)
                         request.httpMethod = "POST"
                         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-                        
-                        if target == .lmstudio {
-                            request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                            request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+
+                        // gpt-5 스트리밍은 조직 인증 필요. 인증 없는 경우 non-stream 폴백
+                        if target == .openai, selectedModel.lowercased().contains("gpt-5") {
+                            do {
+                                // 먼저 스트리밍을 시도
+                                if let key = apiKey {
+                                    request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+                                }
+                                request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+                                request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                                if request.url?.path.contains("/v1/responses") == true {
+                                    request.addValue("responses-2024-12-17", forHTTPHeaderField: "OpenAI-Beta")
+                                }
+                                request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                                request.timeoutInterval = 300.0
+                                let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
+                                request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+                                try await self.processStreamWithContinuation(request: request, continuation: continuation)
+                            } catch {
+                                // 조직 미검증 등으로 스트리밍 오류 시 non-stream으로 폴백
+                                let text = try await self.fetchOpenAIResponses(content: content, model: selectedModel, image: image)
+                                continuation.yield(text)
+                            }
                         } else {
-                            request.addValue("application/json", forHTTPHeaderField: "Accept")
-                        }
-                        
-                        if target == .claude {
-                            guard let key = apiKey else {
-                                throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "Claude API key is required"])
+                            // 기존 스트리밍 경로
+                            if target == .lmstudio {
+                                request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+                                request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                            } else {
+                                request.addValue("application/json", forHTTPHeaderField: "Accept")
                             }
-                            request.addValue("\(key)", forHTTPHeaderField: "x-api-key")
-                            request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-                            request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                        }
-                        
-                        if target == .openai {
-                            guard let key = apiKey else {
-                                throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "OpenAI API key is required"])
+                            
+                            if target == .claude {
+                                guard let key = apiKey else {
+                                    throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "Claude API key is required"])
+                                }
+                                request.addValue("\(key)", forHTTPHeaderField: "x-api-key")
+                                request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+                                request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
                             }
-                            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-                            request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-                            request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                            
+                            if target == .openai {
+                                guard let key = apiKey else {
+                                    throw NSError(domain: "LLMBridgeError", code: 401, userInfo: [NSLocalizedDescriptionKey: "OpenAI API key is required"])
+                                }
+                                request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+                                request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+                                request.addValue("keep-alive", forHTTPHeaderField: "Connection")
+                                if request.url?.path.contains("/v1/responses") == true {
+                                    request.addValue("responses-2024-12-17", forHTTPHeaderField: "OpenAI-Beta")
+                                }
+                            }
+                            
+                            request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                            request.timeoutInterval = 300.0
+                            
+                            let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
+                            request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+                            if target == .openai, request.url?.path.contains("/v1/responses") == true, let body = request.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
+                                print("[LLMBridge] OpenAI Responses payload:", bodyStr)
+                            }
+                            
+                            try await self.processStreamWithContinuation(request: request, continuation: continuation)
                         }
-                        
-                        request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
-                        request.timeoutInterval = 300.0
-                        
-                        let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
-                        request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
-                                                
-                        try await self.processStreamWithContinuation(request: request, continuation: continuation)
                         
                         if !tempResponse.isEmpty {
                             let message = Message(content: tempResponse, isUser: false, image: nil, timestamp: Date())
@@ -404,7 +448,7 @@ public class LLMBridge: ObservableObject {
         }
     }
     
-    private func getChatEndpoint() -> String {
+    private func getChatEndpoint(forModel model: String?) -> String {
         switch target {
         case .ollama:
             return "api/chat"
@@ -413,6 +457,9 @@ public class LLMBridge: ObservableObject {
         case .claude:
             return "v1/messages"
         case .openai:
+            if let model = model?.lowercased(), model.contains("gpt-5") {
+                return "v1/responses"
+            }
             return "v1/chat/completions"
         }
     }
@@ -426,6 +473,9 @@ public class LLMBridge: ObservableObject {
         case .claude:
             return createClaudeChatRequest(content: content, model: model, image: image)
         case .openai:
+            if model.lowercased().hasPrefix("gpt-5") {
+                return createOpenAIResponsesRequest(content: content, model: model, image: image)
+            }
             return createOpenAIChatRequest(content: content, model: model, image: image)
         }
     }
@@ -584,6 +634,119 @@ public class LLMBridge: ObservableObject {
             "max_tokens": 4096
         ]
     }
+
+    private func createOpenAIResponsesRequest(content: String, model: String, image: PlatformImage?, stream: Bool = true) -> [String: Any] {
+        var userContent: [[String: Any]] = []
+        userContent.append([
+            "type": "input_text",
+            "text": content
+        ])
+        
+        if let userImage = image,
+           let imageBase64 = encodeImageToBase64(userImage) {
+            userContent.append([
+                "type": "input_image",
+                "image_url": "data:image/jpeg;base64,\(imageBase64)"
+            ])
+        }
+        
+        let input: [[String: Any]] = [[
+            "role": "user",
+            "content": userContent
+        ]]
+        
+        return [
+            "model": model,
+            "input": input,
+            "stream": stream
+        ]
+    }
+
+    private func parseOpenAIResponsesBody(_ data: Data) -> String? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return String(data: data, encoding: .utf8)
+        }
+        // Preferred: traverse output -> message -> content -> output_text
+        if let outputs = json["output"] as? [[String: Any]] {
+            var combined = ""
+            for out in outputs {
+                if let type = out["type"] as? String, type == "message",
+                   let contents = out["content"] as? [[String: Any]] {
+                    for part in contents {
+                        if let pType = part["type"] as? String,
+                           (pType == "output_text" || pType == "text"),
+                           let text = part["text"] as? String {
+                            combined += text
+                        }
+                    }
+                }
+                if let pType = out["type"] as? String,
+                   (pType == "output_text" || pType == "text"),
+                   let text = out["text"] as? String {
+                    combined += text
+                }
+            }
+            if !combined.isEmpty { return combined }
+        }
+        // Fallbacks
+        if let outputText = json["output_text"] as? String { return outputText }
+        if let content = json["content"] as? [[String: Any]] {
+            var combined = ""
+            for item in content {
+                if let type = item["type"] as? String,
+                   (type == "output_text" || type == "text"),
+                   let text = item["text"] as? String { combined += text }
+            }
+            if !combined.isEmpty { return combined }
+        }
+        return String(describing: json)
+    }
+
+    private func fetchOpenAIResponses(content: String, model: String, image: PlatformImage?) async throws -> String {
+        let endpoint = "v1/responses"
+        let requestURL = baseURL.appendingPathComponent(endpoint)
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        if let key = apiKey { request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
+        request.addValue("responses-2024-12-17", forHTTPHeaderField: "OpenAI-Beta")
+        let body = createOpenAIResponsesRequest(content: content, model: model, image: image, stream: false)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let detail = parseHTTPErrorData(data) ?? ""
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 400
+            throw NSError(domain: "LLMBridgeError", code: code, userInfo: [NSLocalizedDescriptionKey: detail.isEmpty ? "HTTP \(code)" : detail])
+        }
+        if let text = parseOpenAIResponsesBody(data) {
+            return text
+        }
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    private func parseHTTPErrorData(_ data: Data) -> String? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return String(data: data, encoding: .utf8)
+        }
+        if let error = json["error"] as? [String: Any] {
+            if let message = error["message"] as? String { return message }
+            if let code = error["code"] as? String { return code }
+        }
+        if let message = json["message"] as? String { return message }
+        return nil
+    }
+
+    private func makeDetailedHTTPError(for request: URLRequest, statusCode: Int) async -> Error {
+        do {
+            let (data, _) = try await URLSession.shared.data(for: request)
+            let detail = parseHTTPErrorData(data) ?? ""
+            let msg = detail.isEmpty ? "Server error: HTTP \(statusCode)" : "HTTP \(statusCode): \(detail)"
+            return NSError(domain: "LLMBridgeError", code: statusCode, userInfo: [NSLocalizedDescriptionKey: msg])
+        } catch {
+            return NSError(domain: "LLMBridgeError", code: statusCode, userInfo: [NSLocalizedDescriptionKey: "Server error: HTTP \(statusCode)"])
+        }
+    }
     
     private func processStream(request: URLRequest) async throws {
         let (asyncBytes, response) = try await urlSession.bytes(for: request)
@@ -593,8 +756,7 @@ public class LLMBridge: ObservableObject {
         }
         
         guard httpResponse.statusCode == 200 else {
-            let errorMessage = "Server error: HTTP \(httpResponse.statusCode)"
-            throw NSError(domain: "LLMBridgeError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            throw await makeDetailedHTTPError(for: request, statusCode: httpResponse.statusCode)
         }
         
         do {
@@ -722,20 +884,25 @@ public class LLMBridge: ObservableObject {
     }
     
     private func processOpenAIChatStream(_ json: [String: Any]) async {
+        // Chat Completions 스트림 형식
         if let choices = json["choices"] as? [[String: Any]],
            let firstChoice = choices.first,
            let delta = firstChoice["delta"] as? [String: Any],
            let content = delta["content"] as? String {
             tempResponse += content
             currentResponse = tempResponse
-        }
-        
-        if let choices = json["choices"] as? [[String: Any]],
-           let firstChoice = choices.first,
-           let finishReason = firstChoice["finish_reason"] as? String,
-           finishReason == "stop" {
-
             return
+        }
+        // Responses API 스트림 형식
+        if let type = json["type"] as? String {
+            if type == "response.output_text.delta", let delta = json["delta"] as? String {
+                tempResponse += delta
+                currentResponse = tempResponse
+                return
+            }
+            if type == "response.completed" {
+                return
+            }
         }
     }
     
@@ -747,8 +914,7 @@ public class LLMBridge: ObservableObject {
         }
         
         guard httpResponse.statusCode == 200 else {
-            let errorMessage = "Server error: HTTP \(httpResponse.statusCode)"
-            throw NSError(domain: "LLMBridgeError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+            throw await makeDetailedHTTPError(for: request, statusCode: httpResponse.statusCode)
         }
         
         do {
@@ -885,6 +1051,7 @@ public class LLMBridge: ObservableObject {
     }
     
     private func processOpenAIStreamWithContinuation(_ json: [String: Any], continuation: AsyncThrowingStream<String, Error>.Continuation) async {
+        // Chat Completions 스트림
         if let choices = json["choices"] as? [[String: Any]],
            let firstChoice = choices.first,
            let delta = firstChoice["delta"] as? [String: Any],
@@ -894,13 +1061,21 @@ public class LLMBridge: ObservableObject {
                 currentResponse = tempResponse
             }
             continuation.yield(content)
-        }
-        
-        if let choices = json["choices"] as? [[String: Any]],
-           let firstChoice = choices.first,
-           let finishReason = firstChoice["finish_reason"] as? String,
-           finishReason == "stop" {
             return
+        }
+        // Responses API 스트림
+        if let type = json["type"] as? String {
+            if type == "response.output_text.delta", let delta = json["delta"] as? String {
+                tempResponse += delta
+                await MainActor.run {
+                    currentResponse = tempResponse
+                }
+                continuation.yield(delta)
+                return
+            }
+            if type == "response.completed" {
+                return
+            }
         }
     }
     
