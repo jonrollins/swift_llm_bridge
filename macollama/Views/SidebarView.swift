@@ -39,6 +39,9 @@ struct SidebarView: View {
     @State private var selectedGroupId: String?
     @State private var searchText = ""
     @State private var isSearching = false
+    @State private var showingRenameSheet = false
+    @State private var itemToRename: ChatTitle?
+    @State private var renameText = ""
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -101,7 +104,7 @@ struct SidebarView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(chat.question)
+                            Text(chat.question.isEmpty ? "Untitled Chat" : chat.question)
                                 .lineLimit(2)
                                 .font(.headline)
                             
@@ -120,9 +123,16 @@ struct SidebarView: View {
                         }
                         
                         Spacer()
-                        HoverImageButton(imageName: "trash", size: 14, btnColor : .red) {
-                            itemToDelete = chat
-                            showingDeleteAlert = true
+                        HStack(spacing: 4) {
+                            HoverImageButton(imageName: "pencil", size: 14, btnColor: .blue) {
+                                itemToRename = chat
+                                renameText = chat.question
+                                showingRenameSheet = true
+                            }
+                            HoverImageButton(imageName: "trash", size: 14, btnColor : .red) {
+                                itemToDelete = chat
+                                showingDeleteAlert = true
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -169,6 +179,27 @@ struct SidebarView: View {
             }
         }
         .frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $showingRenameSheet) {
+            RenameChatView(
+                currentName: renameText,
+                onRename: { newName in
+                    if let chat = itemToRename {
+                        Task {
+                            do {
+                                try await viewModel.renameChat(groupId: chat.groupId, newName: newName)
+                                print("Chat renamed successfully")
+                            } catch {
+                                print("Error renaming chat: \(error)")
+                            }
+                        }
+                    }
+                },
+                onCancel: {
+                    renameText = ""
+                    itemToRename = nil
+                }
+            )
+        }
     }
 }
 

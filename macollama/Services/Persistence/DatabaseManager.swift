@@ -148,7 +148,15 @@ class DatabaseManager {
     }
     
     func fetchTitles() throws -> [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String)] {
-        let query = "SELECT * FROM questions GROUP BY groupid ORDER BY id DESC;"
+        let query = """
+            SELECT q1.* FROM questions q1
+            INNER JOIN (
+                SELECT groupid, MIN(id) as min_id, MAX(created) as max_created
+                FROM questions 
+                GROUP BY groupid
+            ) q2 ON q1.groupid = q2.groupid AND q1.id = q2.min_id
+            ORDER BY q2.max_created DESC;
+        """
         var statement: OpaquePointer?
         var results: [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String)] = []
         
@@ -217,6 +225,70 @@ class DatabaseManager {
         }
         
         sqlite3_finalize(statement)
+    }
+    
+    func updateChatName(groupId: String, newName: String) throws {
+        guard !newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("Error: Cannot set empty chat name")
+            throw DatabaseError.executeFailed
+        }
+        
+        // First, let's check what records exist for this groupId
+        let checkQuery = "SELECT id, question FROM questions WHERE groupid = ? ORDER BY id ASC;"
+        var checkStatement: OpaquePointer?
+        
+        print("Checking existing records for groupId: \(groupId)")
+        
+        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
+            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
+            
+            while sqlite3_step(checkStatement) == SQLITE_ROW {
+                let id = Int(sqlite3_column_int(checkStatement, 0))
+                let question = String(cString: sqlite3_column_text(checkStatement, 1))
+                print("  Found record: id=\(id), question='\(question)'")
+            }
+        }
+        sqlite3_finalize(checkStatement)
+        
+        // Now perform the update
+        let updateQuery = "UPDATE questions SET question = ? WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?);"
+        var statement: OpaquePointer?
+        
+        print("Updating chat name for groupId: \(groupId) to: '\(newName)'")
+        
+        guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
+            print("Failed to prepare update statement")
+            throw DatabaseError.prepareFailed
+        }
+        
+        sqlite3_bind_text(statement, 1, (newName as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (groupId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 3, (groupId as NSString).utf8String, -1, nil)
+        
+        let result = sqlite3_step(statement)
+        guard result == SQLITE_DONE else {
+            print("Failed to execute update statement, result: \(result)")
+            sqlite3_finalize(statement)
+            throw DatabaseError.executeFailed
+        }
+        
+        let changes = sqlite3_changes(db)
+        print("Update completed, rows affected: \(changes)")
+        
+        sqlite3_finalize(statement)
+        
+        // Verify the update worked
+        print("Verifying update...")
+        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
+            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
+            
+            while sqlite3_step(checkStatement) == SQLITE_ROW {
+                let id = Int(sqlite3_column_int(checkStatement, 0))
+                let question = String(cString: sqlite3_column_text(checkStatement, 1))
+                print("  After update: id=\(id), question='\(question)'")
+            }
+        }
+        sqlite3_finalize(checkStatement)
     }
     
     func delete(id: Int) throws {

@@ -10,7 +10,7 @@ class SidebarViewModel: ObservableObject {
         do {
             let results = try DatabaseManager.shared.fetchTitles()
             chatTitles = results.map { result in
-                ChatTitle(
+                let chatTitle = ChatTitle(
                     id: result.id,
                     groupId: result.groupId,
                     question: result.question,
@@ -19,6 +19,8 @@ class SidebarViewModel: ObservableObject {
                     engine: result.engine,
                     image: result.image
                 )
+                print("Loaded chat: ID=\(result.id), GroupId=\(result.groupId), Question='\(result.question)', Date=\(result.created)")
+                return chatTitle
             }
         } catch {
             print("Failed to load chat titles: \(error)")
@@ -28,6 +30,17 @@ class SidebarViewModel: ObservableObject {
     func deleteChat(groupId: String) async throws {
         try DatabaseManager.shared.deleteGroupChats(groupId: groupId)
         await loadChatTitles()
+    }
+    
+    func renameChat(groupId: String, newName: String) async throws {
+        do {
+            try DatabaseManager.shared.updateChatName(groupId: groupId, newName: newName)
+            print("Successfully renamed chat \(groupId) to '\(newName)'")
+            await loadChatTitles()
+        } catch {
+            print("Failed to rename chat: \(error)")
+            throw error
+        }
     }
     
     func refresh() {
