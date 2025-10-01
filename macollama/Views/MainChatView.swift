@@ -120,6 +120,15 @@ struct MainChatView: View {
             .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: selectedProvider) {
+            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+        }
+        .onChange(of: selectedModel) {
+            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+        }
+        .onAppear {
+            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+        }
     }
     
     // MARK: - Model Selection Header
@@ -227,13 +236,17 @@ struct MainChatView: View {
                 }
             }
             
+            print("DEBUG MainChat: About to save - provider: '\(viewModel.chatProvider.rawValue)', model: '\(viewModel.chatModel ?? "nil")'")
+            
             try DatabaseManager.shared.insert(
                 groupId: viewModel.chatId.uuidString,
                 instruction: UserDefaults.standard.string(forKey: "llmInstruction") ?? "",
                 question: currentText,
                 answer: fullResponse + statsMessage,
                 image: currentImage,
-                engine: selectedModel
+                engine: selectedModel,
+                provider: viewModel.chatProvider.rawValue,
+                model: viewModel.chatModel ?? selectedModel
             )
             
             SidebarViewModel.shared.refresh()

@@ -8,6 +8,9 @@ struct ChatTitle: Identifiable, Equatable {
     let created: String
     let engine: String
     let image: String?
+    let title: String?
+    let provider: String?
+    let model: String?
     
     var formattedDate: String {
         let dateFormatter = ISO8601DateFormatter()
@@ -20,6 +23,13 @@ struct ChatTitle: Identifiable, Equatable {
         return created
     }
     
+    var displayTitle: String {
+        if let title = title, !title.isEmpty {
+            return title
+        }
+        return question.isEmpty ? "Untitled Chat" : question
+    }
+    
     static func == (lhs: ChatTitle, rhs: ChatTitle) -> Bool {
         return lhs.id == rhs.id &&
                lhs.groupId == rhs.groupId &&
@@ -27,7 +37,10 @@ struct ChatTitle: Identifiable, Equatable {
                lhs.answer == rhs.answer &&
                lhs.created == rhs.created &&
                lhs.engine == rhs.engine &&
-               lhs.image == rhs.image
+               lhs.image == rhs.image &&
+               lhs.title == rhs.title &&
+               lhs.provider == rhs.provider &&
+               lhs.model == rhs.model
     }
 }
 
@@ -104,7 +117,7 @@ struct SidebarView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(chat.question.isEmpty ? "Untitled Chat" : chat.question)
+                            Text(chat.displayTitle)
                                 .lineLimit(2)
                                 .font(.headline)
                             

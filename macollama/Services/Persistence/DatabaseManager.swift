@@ -47,7 +47,10 @@ class DatabaseManager {
           answer TEXT,
           image TEXT,
           created TEXT,
-          engine TEXT
+          engine TEXT,
+          title TEXT,
+          provider TEXT,
+          model TEXT
         );
         """
         
@@ -59,7 +62,56 @@ class DatabaseManager {
         
         sqlite3_finalize(statement)
         
+        // Add title column to existing databases if it doesn't exist
+        let addTitleColumnQuery = "ALTER TABLE questions ADD COLUMN title TEXT;"
+        var alterStatement: OpaquePointer?
+        if sqlite3_prepare_v2(db, addTitleColumnQuery, -1, &alterStatement, nil) == SQLITE_OK {
+            sqlite3_step(alterStatement) // This will fail if column already exists, which is fine
+        }
+        sqlite3_finalize(alterStatement)
+        
+        // Add provider column to existing databases if it doesn't exist
+        let addProviderColumnQuery = "ALTER TABLE questions ADD COLUMN provider TEXT;"
+        var alterProviderStatement: OpaquePointer?
+        if sqlite3_prepare_v2(db, addProviderColumnQuery, -1, &alterProviderStatement, nil) == SQLITE_OK {
+            sqlite3_step(alterProviderStatement) // This will fail if column already exists, which is fine
+        }
+        sqlite3_finalize(alterProviderStatement)
+        
+        // Add model column to existing databases if it doesn't exist
+        let addModelColumnQuery = "ALTER TABLE questions ADD COLUMN model TEXT;"
+        var alterModelStatement: OpaquePointer?
+        if sqlite3_prepare_v2(db, addModelColumnQuery, -1, &alterModelStatement, nil) == SQLITE_OK {
+            sqlite3_step(alterModelStatement) // This will fail if column already exists, which is fine
+        }
+        sqlite3_finalize(alterModelStatement)
+        
+        // Fix typo in existing provider data (migrate "Ollma" to "Ollama")
+        migrateProviderTypo()
+        
+        // Fix test data from debugging
+        do {
+            try fixTestModelData()
+        } catch {
+            print("Error fixing test model data: \(error)")
+        }
+        
         //insertInitialDataIfNeeded()
+    }
+    
+    private func migrateProviderTypo() {
+        // Fix the typo "Ollma" to "Ollama" in existing database records
+        let updateQuery = "UPDATE questions SET provider = 'Ollama' WHERE provider = 'Ollma';"
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_step(statement)
+            let changes = sqlite3_changes(db)
+            if changes > 0 {
+                print("Migrated \(changes) records from 'Ollma' to 'Ollama'")
+            }
+        }
+        sqlite3_finalize(statement)
     }
     
     private func insertInitialDataIfNeeded() {
@@ -89,10 +141,10 @@ class DatabaseManager {
         }
     }
         
-    func insert(groupId: String, instruction: String?, question: String, answer: String, image: PlatformImage?, engine: String) throws {
+    func insert(groupId: String, instruction: String?, question: String, answer: String, image: PlatformImage?, engine: String, provider: String? = nil, model: String? = nil) throws {
         let insertSQL = """
-            INSERT INTO questions (groupid, instruction, question, answer, image, created, engine)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO questions (groupid, instruction, question, answer, image, created, engine, title, provider, model)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?);
             """
         
         var statement: OpaquePointer?
@@ -139,6 +191,20 @@ class DatabaseManager {
         sqlite3_bind_text(statement, 6, (currentTime as NSString).utf8String, -1, nil)
         sqlite3_bind_text(statement, 7, (engine as NSString).utf8String, -1, nil)
         
+        // Bind provider parameter (position 8)
+        if let provider = provider {
+            sqlite3_bind_text(statement, 8, (provider as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 8)
+        }
+        
+        // Bind model parameter (position 9)
+        if let model = model {
+            sqlite3_bind_text(statement, 9, (model as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 9)
+        }
+        
         guard sqlite3_step(statement) == SQLITE_DONE else {
             sqlite3_finalize(statement)
             throw DatabaseError.executeFailed
@@ -147,9 +213,10 @@ class DatabaseManager {
         sqlite3_finalize(statement)
     }
     
-    func fetchTitles() throws -> [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String)] {
+    func fetchTitles() throws -> [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String, title: String?, provider: String?, model: String?)] {
         let query = """
-            SELECT q1.* FROM questions q1
+            SELECT q1.id, q1.groupid, q1.instruction, q1.question, q1.answer, q1.image, q1.created, q1.engine, q1.title, q1.provider, q1.model 
+            FROM questions q1
             INNER JOIN (
                 SELECT groupid, MIN(id) as min_id, MAX(created) as max_created
                 FROM questions 
@@ -158,7 +225,7 @@ class DatabaseManager {
             ORDER BY q2.max_created DESC;
         """
         var statement: OpaquePointer?
-        var results: [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String)] = []
+        var results: [(id: Int, groupId: String, instruction: String?, question: String, answer: String, image: String?, created: String, engine: String, title: String?, provider: String?, model: String?)] = []
         
         guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
             throw DatabaseError.prepareFailed
@@ -173,8 +240,11 @@ class DatabaseManager {
             let image = sqlite3_column_text(statement, 5).map { String(cString: $0) }
             let created = String(cString: sqlite3_column_text(statement, 6))
             let engine = String(cString: sqlite3_column_text(statement, 7))
+            let title = sqlite3_column_text(statement, 8).map { String(cString: $0) }
+            let provider = sqlite3_column_text(statement, 9).map { String(cString: $0) }
+            let model = sqlite3_column_text(statement, 10).map { String(cString: $0) }
             
-            results.append((id, groupId, instruction, question, answer, image, created, engine))
+            results.append((id, groupId, instruction, question, answer, image, created, engine, title, provider, model))
         }
         
         sqlite3_finalize(statement)
@@ -250,8 +320,8 @@ class DatabaseManager {
         }
         sqlite3_finalize(checkStatement)
         
-        // Now perform the update
-        let updateQuery = "UPDATE questions SET question = ? WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?);"
+        // Now perform the update - update the title field of the first message in the group
+        let updateQuery = "UPDATE questions SET title = ? WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?);"
         var statement: OpaquePointer?
         
         print("Updating chat name for groupId: \(groupId) to: '\(newName)'")
@@ -314,6 +384,7 @@ class DatabaseManager {
     
 
     func fetchQuestionsByGroupId(_ groupId: String) throws -> [(id: Int, question: String, answer: String, created: String, image: String?, engine: String)] {
+        print("Fetching questions for groupId: \(groupId)")
         let query = """
             SELECT id, question, answer, created, image, engine 
             FROM questions
@@ -338,11 +409,78 @@ class DatabaseManager {
             let image = sqlite3_column_text(statement, 4).map { String(cString: $0) }
             let engine = String(cString: sqlite3_column_text(statement, 5))
 
+            print("Found message: id=\(id), question='\(question.prefix(30))...', answer='\(answer.prefix(30))...', created=\(created)")
             results.append((id, question, answer, created, image, engine))
         }
         
         sqlite3_finalize(statement)
+        print("Returning \(results.count) results for groupId: \(groupId)")
         return results
+    }
+    
+    // Update provider and model for a chat group (first message in the group)
+    func updateChatProviderAndModel(groupId: String, provider: String?, model: String?) throws {
+        let updateQuery = """
+            UPDATE questions 
+            SET provider = ?, model = ? 
+            WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?);
+        """
+        var statement: OpaquePointer?
+        
+        guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.prepareFailed
+        }
+        
+        if let provider = provider {
+            sqlite3_bind_text(statement, 1, (provider as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 1)
+        }
+        
+        if let model = model {
+            sqlite3_bind_text(statement, 2, (model as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 2)
+        }
+        
+        sqlite3_bind_text(statement, 3, (groupId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 4, (groupId as NSString).utf8String, -1, nil)
+        
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            sqlite3_finalize(statement)
+            throw DatabaseError.executeFailed
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    // Get provider and model for a chat group
+    func getChatProviderAndModel(groupId: String) throws -> (provider: String?, model: String?) {
+        let query = """
+            SELECT provider, model 
+            FROM questions 
+            WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?)
+            LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        
+        guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.prepareFailed
+        }
+        
+        sqlite3_bind_text(statement, 1, (groupId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (groupId as NSString).utf8String, -1, nil)
+        
+        var provider: String? = nil
+        var model: String? = nil
+        
+        if sqlite3_step(statement) == SQLITE_ROW {
+            provider = sqlite3_column_text(statement, 0).map { String(cString: $0) }
+            model = sqlite3_column_text(statement, 1).map { String(cString: $0) }
+        }
+        
+        sqlite3_finalize(statement)
+        return (provider, model)
     }
 
     func deleteGroupChats(groupId: String) throws {
@@ -363,18 +501,18 @@ class DatabaseManager {
         sqlite3_finalize(statement)
     }
 
-    func searchMessages(keyword: String) throws -> [(id: Int, groupId: String, question: String, answer: String, created: String, engine: String, image: String?)] {
+    func searchMessages(keyword: String) throws -> [(id: Int, groupId: String, question: String, answer: String, created: String, engine: String, image: String?, title: String?, provider: String?, model: String?)] {
         let pattern = "%\(keyword)%"
         
         let query = """
-            SELECT id, groupid, question, answer, created, engine, image
+            SELECT id, groupid, question, answer, created, engine, image, title, provider, model
             FROM questions
-            WHERE question LIKE ? OR answer LIKE ?
+            WHERE question LIKE ? OR answer LIKE ? OR title LIKE ?
             ORDER BY created DESC;
         """
         
         var statement: OpaquePointer?
-        var results: [(id: Int, groupId: String, question: String, answer: String, created: String, engine: String, image: String?)] = []
+        var results: [(id: Int, groupId: String, question: String, answer: String, created: String, engine: String, image: String?, title: String?, provider: String?, model: String?)] = []
         
         guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
             throw DatabaseError.prepareFailed
@@ -382,6 +520,7 @@ class DatabaseManager {
         
         sqlite3_bind_text(statement, 1, (pattern as NSString).utf8String, -1, nil)
         sqlite3_bind_text(statement, 2, (pattern as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 3, (pattern as NSString).utf8String, -1, nil)
         
         while sqlite3_step(statement) == SQLITE_ROW {
             let id = Int(sqlite3_column_int(statement, 0))
@@ -391,8 +530,11 @@ class DatabaseManager {
             let created = String(cString: sqlite3_column_text(statement, 4))
             let engine = String(cString: sqlite3_column_text(statement, 5))
             let image = sqlite3_column_text(statement, 6).map { String(cString: $0) }
+            let title = sqlite3_column_text(statement, 7).map { String(cString: $0) }
+            let provider = sqlite3_column_text(statement, 8).map { String(cString: $0) }
+            let model = sqlite3_column_text(statement, 9).map { String(cString: $0) }
             
-            results.append((id, groupId, question, answer, created, engine, image))
+            results.append((id, groupId, question, answer, created, engine, image, title, provider, model))
         }
         
         sqlite3_finalize(statement)
@@ -418,4 +560,28 @@ class DatabaseManager {
         
         sqlite3_finalize(statement)
     }
-} 
+    
+    // Fix test data in existing chat records
+    func fixTestModelData() throws {
+        // Only update records with "test-model" specifically, not all NULL values
+        let updateQuery = """
+            UPDATE questions 
+            SET model = engine 
+            WHERE model = 'test-model';
+        """
+        var statement: OpaquePointer?
+        
+        guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.prepareFailed
+        }
+        
+        if sqlite3_step(statement) == SQLITE_DONE {
+            let changes = sqlite3_changes(db)
+            if changes > 0 {
+                print("Fixed \(changes) test-model records")
+            }
+        }
+        
+        sqlite3_finalize(statement)
+    }
+}

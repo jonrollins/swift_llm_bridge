@@ -17,7 +17,10 @@ class SidebarViewModel: ObservableObject {
                     answer: result.answer,
                     created: result.created,
                     engine: result.engine,
-                    image: result.image
+                    image: result.image,
+                    title: result.title,
+                    provider: result.provider,
+                    model: result.model
                 )
                 print("Loaded chat: ID=\(result.id), GroupId=\(result.groupId), Question='\(result.question)', Date=\(result.created)")
                 return chatTitle
@@ -60,7 +63,10 @@ class SidebarViewModel: ObservableObject {
                     answer: result.answer,
                     created: result.created,
                     engine: result.engine,
-                    image: result.image
+                    image: result.image,
+                    title: result.title,
+                    provider: result.provider,
+                    model: result.model
                 )
             }
         } catch {

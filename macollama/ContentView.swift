@@ -22,10 +22,31 @@ struct ContentView: View {
     
     private let chatViewModel = ChatViewModel.shared
     
+    
     private var toolbarContent: some View {
         HStack {
             HoverImageButton(imageName: "plus") {
                 chatViewModel.startNewChat()
+                
+                // Create empty chat entry so it appears in sidebar immediately
+                Task {
+                    do {
+                        try DatabaseManager.shared.insert(
+                            groupId: chatViewModel.chatId.uuidString,
+                            instruction: nil,
+                            question: "New Chat",
+                            answer: "",
+                            image: nil,
+                            engine: selectedModel ?? "Unknown",
+                            provider: selectedProvider.rawValue,
+                            model: selectedModel
+                        )
+                        // Refresh sidebar to show new chat
+                        SidebarViewModel.shared.refresh()
+                    } catch {
+                        print("Failed to create empty chat: \(error)")
+                    }
+                }
             }
             HoverImageButton(imageName: "gearshape") {
                 showingSettings = true
@@ -85,6 +106,30 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showCopyAlert)
         .background(Color(NSColor.windowBackgroundColor))
+        .onReceive(chatViewModel.$chatProvider) { provider in
+            selectedProvider = provider
+        }
+        .onReceive(chatViewModel.$chatModel) { model in
+            if let model = model {
+                selectedModel = model
+            }
+        }
+        .onChange(of: selectedProvider) {
+            // Update ChatViewModel when user changes provider in UI
+            chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
+            // Save to database if this is an existing chat
+            if chatViewModel.chatId != UUID() {
+                chatViewModel.saveProviderAndModel()
+            }
+        }
+        .onChange(of: selectedModel) {
+            // Update ChatViewModel when user changes model in UI
+            chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
+            // Save to database if this is an existing chat
+            if chatViewModel.chatId != UUID() {
+                chatViewModel.saveProviderAndModel()
+            }
+        }
     }
     
     @MainActor

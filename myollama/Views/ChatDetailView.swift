@@ -53,14 +53,39 @@ struct ChatDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Menu {
+                    ForEach(LLMProvider.availableProviders, id: \.self) { provider in
+                        Button(action: {
+                            selectedProvider = provider
+                        }) {
+                            HStack {
+                                Text(provider.displayName)
+                                if selectedProvider == provider {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "server.rack")
+                        Text(selectedProvider.displayName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
             ToolbarItem(placement: .principal) {
                 Menu {
                     if !models.isEmpty {
                         ForEach(models, id: \.self) { model in
                             Button(action: {
                                 selectedModel = model
-                                UserDefaults.standard.set(model, forKey: "selectedModel")
-                                UserDefaults.standard.synchronize()
                             }) {
                                 HStack {
                                     Text(model)
@@ -117,6 +142,28 @@ struct ChatDetailView: View {
                     await loadModels()
                 }
             }
+            
+            // Sync with ChatViewModel when view appears
+            selectedProvider = chatViewModel.chatProvider
+            selectedModel = chatViewModel.chatModel
+        }
+        .onChange(of: chatViewModel.chatId) { _, _ in
+            // When chat changes, update our local provider/model from ChatViewModel
+            selectedProvider = chatViewModel.chatProvider
+            selectedModel = chatViewModel.chatModel
+        }
+        .onChange(of: selectedProvider) { _, newProvider in
+            // When user changes provider, update ChatViewModel and save
+            chatViewModel.chatProvider = newProvider
+            chatViewModel.saveProviderAndModel()
+            Task {
+                await loadModels()
+            }
+        }
+        .onChange(of: selectedModel) { _, newModel in
+            // When user changes model, update ChatViewModel and save
+            chatViewModel.chatModel = newModel
+            chatViewModel.saveProviderAndModel()
         }
     }
     
@@ -136,7 +183,7 @@ struct ChatDetailView: View {
     func loadModels() async {
         isLoadingModels = true
         models = []
-        selectedModel = nil
+        // Don't reset selectedModel here - preserve chat-specific selection
         
         // Check if current provider is available
         if !LLMProvider.availableProviders.contains(selectedProvider) {
@@ -150,15 +197,14 @@ struct ChatDetailView: View {
             if newModels.isEmpty {
                 selectedModel = nil
             } else {
-                let savedModel = UserDefaults.standard.string(forKey: "selectedModel")
-                if let savedModel = savedModel, newModels.contains(savedModel) {
-                    selectedModel = savedModel
+                // Use chat-specific model if available, otherwise use first model
+                let chatModel = chatViewModel.chatModel
+                if let chatModel = chatModel, newModels.contains(chatModel) {
+                    selectedModel = chatModel
                 } else {
-                    selectedModel = newModels.first                    
-                    if let firstModel = newModels.first {
-                        UserDefaults.standard.set(firstModel, forKey: "selectedModel")
-                        UserDefaults.standard.synchronize()
-                    }
+                    selectedModel = newModels.first
+                    chatViewModel.chatModel = newModels.first
+                    chatViewModel.saveProviderAndModel()
                 }
             }
         } catch {
@@ -237,7 +283,9 @@ struct ChatDetailView: View {
                     question: currentText,
                     answer: fullResponse,
                     image: currentImage,
-                    engine: selectedModel
+                    engine: selectedModel,
+                    provider: selectedProvider.rawValue,
+                    model: selectedModel
                 )
                 
                 // Refresh sidebar
