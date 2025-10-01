@@ -25,7 +25,7 @@ struct ModelSelectionMenu: View {
             }
         }
         
-        // 현재 선택된 provider가 available하지 않으면 첫 번째 available provider로 변경
+        
         if !availableProviders.contains(selectedProvider),
            let firstProvider = availableProviders.first {
             selectedProvider = firstProvider
@@ -38,28 +38,52 @@ struct ModelSelectionMenu: View {
     
     var body: some View {
         HStack {
-            Menu {
-                ForEach(availableProviders, id: \.self) { provider in
-                    Button(action: {
-                        selectedProvider = provider
-                        LLMService.shared.refreshForProviderChange()
-                        Task { await onProviderChange() }
-                    }) {
-                        HStack {
-                            Text(provider.rawValue)
-                            if selectedProvider == provider {
-                                Image(systemName: "checkmark")
+            if availableProviders.count > 1 {
+                Menu {
+                    ForEach(availableProviders, id: \.self) { provider in
+                        Button(action: {
+                            selectedProvider = provider
+                            LLMService.shared.refreshForProviderChange()
+                            Task { await onProviderChange() }
+                        }) {
+                            HStack {
+                                Text(provider.displayName)
+                                if selectedProvider == provider {
+                                    Image(systemName: "checkmark")
+                                }
                             }
                         }
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Provider:")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        Text(selectedProvider.displayName)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        Image(systemName: "cpu")
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundColor(.secondary)
+                    }
                 }
-            } label: {
-                HStack {
-                    Text(selectedProvider.rawValue)
-                    Image(systemName: "chevron.down")
+                .frame(width: 220)
+            } else {
+                // Single provider configured; show label and name without dropdown
+                HStack(spacing: 6) {
+                    Text("Provider:")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    Text(selectedProvider.displayName)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
                 }
+                .frame(width: 220, alignment: .leading)
             }
-            .frame(width: 160)
             
             Menu {
                 ForEach(models, id: \.self) { model in
@@ -81,7 +105,9 @@ struct ModelSelectionMenu: View {
                 }
                 .disabled(isLoadingModels)
             } label: {
-                HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "cpu")
+                        .symbolRenderingMode(.hierarchical)
                     if isLoadingModels {
                         ProgressView()
                             .scaleEffect(0.7)
@@ -89,7 +115,6 @@ struct ModelSelectionMenu: View {
                     } else {
                         Text(selectedModel ?? "l_select_model".localized)
                     }
-                    Image(systemName: "chevron.down")
                 }
             }
             .frame(width: 300)
@@ -110,3 +135,4 @@ struct ModelSelectionMenu: View {
         }
     }
 } 
+

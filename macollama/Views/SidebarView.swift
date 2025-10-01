@@ -41,14 +41,14 @@ struct SidebarView: View {
     @State private var isSearching = false
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 10) {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.gray)
                 TextField("l_search".localized, text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundColor(.primary)
-                    .onChange(of: searchText) { newValue in
+                    .onChange(of: searchText) { _, newValue in
                         isSearching = !newValue.isEmpty
                         Task {
                             if newValue.isEmpty {
@@ -74,10 +74,18 @@ struct SidebarView: View {
                 }
             }
             .padding(8)
-            .background(Color.gray.opacity(0.1))
+            .background(
+                Group {
+                    if #available(macOS 12, *) {
+                        RoundedRectangle(cornerRadius: 8).fill(.regularMaterial)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.1))
+                    }
+                }
+            )
             .cornerRadius(8)
             .padding(.horizontal)
-            .padding(.vertical, 4)
+            .padding(Edge.Set.vertical, 4)
             
             ScrollViewReader { proxy in
                 List(viewModel.chatTitles, selection: $selectedGroupId) { chat in
@@ -104,7 +112,7 @@ struct SidebarView: View {
                                 Spacer()
                             }
                         }
-                        .padding(.vertical, 4)
+                        .padding(Edge.Set.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             selectedGroupId = chat.groupId
@@ -118,11 +126,13 @@ struct SidebarView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.vertical, 1)
-                    .background(chat.groupId == selectedGroupId ? Color.blue.opacity(0.1) : Color.clear)
-                    .cornerRadius(6)
+                    .padding(Edge.Set.vertical, 2)
+                    .padding(Edge.Set.vertical, 4)
+                    .listRowBackground(chat.groupId == selectedGroupId ? Color.blue.opacity(0.08) : Color.clear)
                 }
-                .listStyle(.sidebar)
+                .listStyle(.inset)
+                .listRowSeparator(.visible)
+                .listRowSeparatorTint(.secondary)
                 .task {
                     await viewModel.loadChatTitles()
                     if let firstChat = viewModel.chatTitles.first {
@@ -130,14 +140,14 @@ struct SidebarView: View {
                         chatViewModel.loadChat(groupId: firstChat.groupId)
                     }
                 }
-                .onChange(of: viewModel.chatTitles) { _ in
-                    if let firstId = viewModel.chatTitles.first?.id {
+                .onChange(of: viewModel.chatTitles) { _, newTitles in
+                    if let firstId = newTitles.first?.id {
                         withAnimation {
                             proxy.scrollTo(firstId, anchor: .top)
                         }
                     }
                 }
-                .onChange(of: chatViewModel.chatId) { newId in
+                .onChange(of: chatViewModel.chatId) { _, newId in
                     selectedGroupId = newId.uuidString
                 }
                 .alert("l_del_question".localized, isPresented: $showingDeleteAlert) {
@@ -160,3 +170,4 @@ struct SidebarView: View {
         .frame(minWidth: 260)
     }
 }
+

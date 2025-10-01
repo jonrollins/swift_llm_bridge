@@ -1,6 +1,33 @@
 import SwiftUI
 import MarkdownUI
 
+// MARK: - View Extensions for Liquid Glass
+extension View {
+    @ViewBuilder
+    func ifAvailableGlass<Content: View>(@ViewBuilder _ modifier: (Self) -> Content) -> some View {
+        if #available(macOS 15, *) {
+            modifier(self)
+        } else {
+            self
+        }
+    }
+}
+
+// MARK: - Glass Effect Container
+struct GlassEffectContainer<Content: View>: View {
+    let spacing: CGFloat
+    let content: Content
+    
+    init(spacing: CGFloat = 0, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+    }
+}
+
 extension Theme {
     static let customSmall = Theme()
         .text {
@@ -84,9 +111,24 @@ struct MessageBubble: View {
                     
                     SelectableText(text: message.content)
                         .padding(20)
-                        .background(Color.gray.opacity(0.2))
+                        .ifAvailableGlass { view in
+                            view.glassEffect(.regular.tint(Color.gray.opacity(0.28)), in: .rect(cornerRadius: 12))
+                        }
+                        .background(
+                            Group {
+                                if #available(macOS 15, *) { Color.clear } else { Color.gray.opacity(0.25) }
+                            }
+                        )
                         .foregroundColor(.primary)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            Group {
+                                if #available(macOS 15, *) {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                                }
+                            }
+                        )
 
                     HStack {
                         HoverImageButton(imageName: "arrow.counterclockwise.square") {
@@ -120,15 +162,22 @@ struct MessageBubble: View {
                     HStack {
                         Spacer()
                         Text("You")
-                            .font(.title2)
+                            .font(.title)
                             .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.blue)
                             .padding(.horizontal, 4)
                     }
                     
                     SelectableText(text: message.content)
                         .padding(20)
-                        .background(Color.blue)
+                        .ifAvailableGlass { view in
+                            view.glassEffect(.regular.tint(Color.blue.opacity(0.35)), in: .rect(cornerRadius: 12))
+                        }
+                        .background(
+                            Group {
+                                if #available(macOS 15, *) { Color.clear } else { Color.blue }
+                            }
+                        )
                         .foregroundColor(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 

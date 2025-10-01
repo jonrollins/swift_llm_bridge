@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftUI
 import MarkdownUI
 
 struct DetailView: View {
@@ -12,18 +13,37 @@ struct DetailView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 20) {
-                        ForEach(viewModel.messages) { message in
-                            VStack(alignment: .trailing, spacing: 4) {
-                                MessageBubble(message: message)
+                    Group {
+                        if #available(macOS 15, *) {
+                            GlassEffectContainer(spacing: 24) {
+                                LazyVStack(spacing: 20) {
+                                    ForEach(viewModel.messages) { message in
+                                        VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
+                                            MessageBubble(message: message)
+                                        }
+                                        .id(message.id)
+                                    }
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .id(bottomID)
+                                }
                             }
-                            .id(message.id)
+                        } else {
+                            LazyVStack(spacing: 20) {
+                                ForEach(viewModel.messages) { message in
+                                    VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
+                                        MessageBubble(message: message)
+                                    }
+                                    .id(message.id)
+                                }
+                                Color.clear
+                                    .frame(height: 1)
+                                    .id(bottomID)
+                            }
                         }
-                        Color.clear
-                            .frame(height: 1)
-                            .id(bottomID)
                     }
                     .padding()
                 }
@@ -57,11 +77,20 @@ struct DetailView: View {
                     isGenerating = false
                 }
             )
+            .padding(8)
+            .modifier(GlassEffectModifier())
+            .background(
+                Group {
+                    if #available(macOS 15, *) { Color.clear } else { Color.gray.opacity(0.08) }
+                }
+            )
+            .padding([Edge.Set.leading, Edge.Set.trailing])
+            .padding(Edge.Set.bottom, 8)
         }
     }
     
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        proxy.scrollTo(bottomID, anchor: .bottom)
+        proxy.scrollTo(bottomID, anchor: UnitPoint.bottom)
     }
     
     private func sendMessage() async {
@@ -180,3 +209,14 @@ struct DetailView: View {
     }
 }
 
+// MARK: - Glass Effect Modifier
+struct GlassEffectModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 15, *) {
+            content
+                .glassEffect(.regular, in: .rect(cornerRadius: 12))
+        } else {
+            content
+        }
+    }
+}

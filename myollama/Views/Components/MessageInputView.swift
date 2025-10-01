@@ -106,19 +106,19 @@ struct MessageInputView: View {
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker(selectedImage: $viewModel.selectedImage, selectedPDFText: $selectedPDFText, selectedTXTText: $selectedTXTText)
         }
-        .onChange(of: viewModel.shouldFocusTextField) { shouldFocus in
+        .onChange(of: viewModel.shouldFocusTextField) { _, shouldFocus in
             if shouldFocus {
                 isTextFieldFocused = true
                 viewModel.shouldFocusTextField = false
             }
         }
-        .onChange(of: selectedPDFText) { pdfText in
+        .onChange(of: selectedPDFText) { _, pdfText in
             if let pdfText = pdfText {
                 viewModel.messageText += "\n\n[PDF]\n" + pdfText
                 selectedPDFText = nil
             }
         }
-        .onChange(of: selectedTXTText) { txtText in
+        .onChange(of: selectedTXTText) { _, txtText in
             if let txtText = txtText {
                 viewModel.messageText += "\n\n[TEXT]\n" + txtText
                 selectedTXTText = nil

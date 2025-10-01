@@ -120,7 +120,7 @@ struct ContentView: View {
                 self.selectedModel = nil
                 UserDefaults.standard.removeObject(forKey: "selectedModel")
             }
-            await showError("l_error2".localized)
+            showError("l_error2".localized)
         }
         
         isLoadingModels = false

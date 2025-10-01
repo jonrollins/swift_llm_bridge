@@ -34,7 +34,7 @@ struct SettingsView: View {
                                 Text("Ollama Server")
                                     .foregroundStyle(.secondary)
                             }
-                            .onChange(of: showOllama) { _ in
+                            .onChange(of: showOllama) {
                                 Task {
                                     await ContentView.shared.loadModels()
                                 }
@@ -83,7 +83,7 @@ struct SettingsView: View {
                                 Text("LMStudio".localized)
                                     .foregroundStyle(.secondary)
                             }
-                            .onChange(of: showLMStudio) { _ in
+                            .onChange(of: showLMStudio) {
                                 Task {
                                     await ContentView.shared.loadModels()
                                 }
@@ -132,7 +132,7 @@ struct SettingsView: View {
                                 Text("Claude API Key")
                                     .foregroundStyle(.secondary)
                             }
-                            .onChange(of: showClaude) { _ in
+                            .onChange(of: showClaude) {
                                 Task {
                                     await ContentView.shared.loadModels()
                                 }
@@ -145,7 +145,7 @@ struct SettingsView: View {
                                 .padding(10)
                                 .foregroundColor(.primary)
                                 .background(Color(NSColor.textBackgroundColor))
-                                .onChange(of: claudeApiKey) { newValue in
+                                .onChange(of: claudeApiKey) { _, newValue in
                                     let trimmedValue = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                                     if trimmedValue.isEmpty {
                                         showClaude = false
@@ -167,7 +167,7 @@ struct SettingsView: View {
                                 Text("OpenAI API Key")
                                     .foregroundStyle(.secondary)
                             }
-                            .onChange(of: showOpenAI) { _ in
+                            .onChange(of: showOpenAI) {
                                 Task {
                                     await ContentView.shared.loadModels()
                                 }
@@ -180,7 +180,7 @@ struct SettingsView: View {
                                 .padding(10)
                                 .foregroundColor(.primary)
                                 .background(Color(NSColor.textBackgroundColor))
-                                .onChange(of: openaiApiKey) { newValue in
+                                .onChange(of: openaiApiKey) { _, newValue in
                                     let trimmedValue = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
                                     if trimmedValue.isEmpty {
                                         showOpenAI = false
@@ -354,9 +354,11 @@ struct SettingsView: View {
         Task {
             do {
                 try DatabaseManager.shared.deleteAllData()
-                await SidebarViewModel.shared.refresh()
-                ChatViewModel.shared.startNewChat()
-                isPresented = false
+                await MainActor.run {
+                    SidebarViewModel.shared.refresh()
+                    ChatViewModel.shared.startNewChat()
+                    isPresented = false
+                }
             } catch {
                 print("Failed to delete all data: \(error)")
             }
@@ -374,7 +376,7 @@ struct SettingsView: View {
                 request.httpMethod = "GET"
                 request.timeoutInterval = 10.0
                 
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (_, response) = try await URLSession.shared.data(for: request)
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200 {
@@ -402,7 +404,7 @@ struct SettingsView: View {
                 request.httpMethod = "GET"
                 request.timeoutInterval = 10.0
                 
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (_, response) = try await URLSession.shared.data(for: request)
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200 {
@@ -419,3 +421,4 @@ struct SettingsView: View {
         }
     }
 } 
+

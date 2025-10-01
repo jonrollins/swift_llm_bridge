@@ -32,10 +32,10 @@ struct ChatDetailView: View {
                 .onTapGesture {
                     hideKeyboard()
                 }
-                .onChange(of: chatViewModel.messages.count) { _ in
+                .onChange(of: chatViewModel.messages.count) {
                     scrollToBottom(proxy: proxy)
                 }
-                .onChange(of: chatViewModel.messages.last?.content) { _ in
+                .onChange(of: chatViewModel.messages.last?.content) {
                     scrollToBottom(proxy: proxy)
                 }
             }
@@ -263,3 +263,4 @@ struct ChatDetailView: View {
         }
     }
 } 
+
