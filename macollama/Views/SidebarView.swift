@@ -41,7 +41,7 @@ struct SidebarView: View {
     @State private var isSearching = false
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.gray)
@@ -130,6 +130,7 @@ struct SidebarView: View {
                     .padding(Edge.Set.vertical, 4)
                     .listRowBackground(chat.groupId == selectedGroupId ? Color.blue.opacity(0.08) : Color.clear)
                 }
+                .frame(maxHeight: .infinity)
                 .listStyle(.inset)
                 .listRowSeparator(.visible)
                 .listRowSeparatorTint(.secondary)
@@ -167,7 +168,7 @@ struct SidebarView: View {
                 }
             }
         }
-        .frame(minWidth: 260)
+        .frame(minWidth: 260, maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

@@ -34,15 +34,15 @@ struct ContentView: View {
     }
     
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        HSplitView {
             SidebarView()
                 .toolbar {
                     ToolbarItem(placement: .automatic) {
                         toolbarContent
                     }
                 }
-                .navigationTitle("")
-        } detail: {
+                .frame(minWidth: 260, maxWidth: 400)
+                
             MainChatView(
                 selectedModel: $selectedModel,
                 selectedProvider: $selectedProvider,
