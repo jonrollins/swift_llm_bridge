@@ -42,21 +42,16 @@ struct ContentView: View {
                     }
                 }
                 .navigationTitle("")
-                .toolbar {
-                    ToolbarItem(placement: .navigation) {
-                        ModelSelectionMenu(
-                            selectedModel: $selectedModel,
-                            selectedProvider: $selectedProvider,
-                            models: $models,
-                            isLoadingModels: $isLoadingModels,
-                            onProviderChange: { await loadModels() },
-                            onModelRefresh: { await loadModels() },
-                            onCopyAllMessages: { copyAllMessages() }
-                        )
-                    }
-                }
         } detail: {
-            DetailView(selectedModel: $selectedModel, isLoadingModels: $isLoadingModels)
+            MainChatView(
+                selectedModel: $selectedModel,
+                selectedProvider: $selectedProvider,
+                models: $models,
+                isLoadingModels: $isLoadingModels,
+                onProviderChange: { await loadModels() },
+                onModelRefresh: { await loadModels() },
+                onCopyAllMessages: { copyAllMessages() }
+            )
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(isPresented: $showingSettings)
