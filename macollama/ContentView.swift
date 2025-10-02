@@ -27,26 +27,6 @@ struct ContentView: View {
         HStack {
             HoverImageButton(imageName: "plus") {
                 chatViewModel.startNewChat()
-                
-                // Create empty chat entry so it appears in sidebar immediately
-                Task {
-                    do {
-                        try DatabaseManager.shared.insert(
-                            groupId: chatViewModel.chatId.uuidString,
-                            instruction: nil,
-                            question: "New Chat",
-                            answer: "",
-                            image: nil,
-                            engine: selectedModel ?? "Unknown",
-                            provider: selectedProvider.rawValue,
-                            model: selectedModel
-                        )
-                        // Refresh sidebar to show new chat
-                        SidebarViewModel.shared.refresh()
-                    } catch {
-                        print("Failed to create empty chat: \(error)")
-                    }
-                }
             }
             HoverImageButton(imageName: "gearshape") {
                 showingSettings = true

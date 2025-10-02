@@ -18,7 +18,7 @@
 
 /* Begin PBXFileReference section */
 		9F0A32F62DF9BB98000A83B2 /* myollama.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myollama.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9F63C8C32D49F5C6001C2645 /* LLM-K.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "LLM-K.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F63C8C32D49F5C6001C2645 /* LocalLLM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalLLM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -119,7 +119,7 @@
 		9F63C8C42D49F5C6001C2645 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9F63C8C32D49F5C6001C2645 /* LLM-K.app */,
+				9F63C8C32D49F5C6001C2645 /* LocalLLM.app */,
 				9F0A32F62DF9BB98000A83B2 /* myollama.app */,
 			);
 			name = Products;
@@ -169,7 +169,7 @@
 			);
 			name = macollama;
 			productName = macollama;
-			productReference = 9F63C8C32D49F5C6001C2645 /* LLM-K.app */;
+			productReference = 9F63C8C32D49F5C6001C2645 /* LocalLLM.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -460,12 +460,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = macollama/macollama.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 50813;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"macollama/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = P69YVRNMMC;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -484,7 +485,7 @@
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rtlink.macollama;
 				PRODUCT_MODULE_NAME = macollama;
-				PRODUCT_NAME = "LLM-K";
+				PRODUCT_NAME = LocalLLM;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -496,12 +497,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = macollama/macollama.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 50813;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"macollama/Preview Content\"";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = P69YVRNMMC;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -520,7 +522,7 @@
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rtlink.macollama;
 				PRODUCT_MODULE_NAME = macollama;
-				PRODUCT_NAME = "LLM-K";
+				PRODUCT_NAME = LocalLLM;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
