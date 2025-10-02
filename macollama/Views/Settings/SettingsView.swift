@@ -360,7 +360,7 @@ struct SettingsView: View {
                     isPresented = false
                 }
             } catch {
-                print("Failed to delete all data: \(error)")
+                // Removed print statement as requested
             }
         }
     }

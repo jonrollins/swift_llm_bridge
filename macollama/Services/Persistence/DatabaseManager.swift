@@ -63,56 +63,49 @@ class DatabaseManager {
         sqlite3_finalize(statement)
         
         // Add title column to existing databases if it doesn't exist
-        let addTitleColumnQuery = "ALTER TABLE questions ADD COLUMN title TEXT;"
-        var alterStatement: OpaquePointer?
-        if sqlite3_prepare_v2(db, addTitleColumnQuery, -1, &alterStatement, nil) == SQLITE_OK {
-            sqlite3_step(alterStatement) // This will fail if column already exists, which is fine
-        }
-        sqlite3_finalize(alterStatement)
+//        let addTitleColumnQuery = "ALTER TABLE questions ADD COLUMN title TEXT;"
+//        var alterStatement: OpaquePointer?
+//        if sqlite3_prepare_v2(db, addTitleColumnQuery, -1, &alterStatement, nil) == SQLITE_OK {
+//            sqlite3_step(alterStatement) // This will fail if column already exists, which is fine
+//        }
+//        sqlite3_finalize(alterStatement)
         
         // Add provider column to existing databases if it doesn't exist
-        let addProviderColumnQuery = "ALTER TABLE questions ADD COLUMN provider TEXT;"
-        var alterProviderStatement: OpaquePointer?
-        if sqlite3_prepare_v2(db, addProviderColumnQuery, -1, &alterProviderStatement, nil) == SQLITE_OK {
-            sqlite3_step(alterProviderStatement) // This will fail if column already exists, which is fine
-        }
-        sqlite3_finalize(alterProviderStatement)
+//        let addProviderColumnQuery = "ALTER TABLE questions ADD COLUMN provider TEXT;"
+//        var alterProviderStatement: OpaquePointer?
+//        if sqlite3_prepare_v2(db, addProviderColumnQuery, -1, &alterProviderStatement, nil) == SQLITE_OK {
+//            sqlite3_step(alterProviderStatement) // This will fail if column already exists, which is fine
+//        }
+//        sqlite3_finalize(alterProviderStatement)
         
         // Add model column to existing databases if it doesn't exist
-        let addModelColumnQuery = "ALTER TABLE questions ADD COLUMN model TEXT;"
-        var alterModelStatement: OpaquePointer?
-        if sqlite3_prepare_v2(db, addModelColumnQuery, -1, &alterModelStatement, nil) == SQLITE_OK {
-            sqlite3_step(alterModelStatement) // This will fail if column already exists, which is fine
-        }
-        sqlite3_finalize(alterModelStatement)
+//        let addModelColumnQuery = "ALTER TABLE questions ADD COLUMN model TEXT;"
+//        var alterModelStatement: OpaquePointer?
+//        if sqlite3_prepare_v2(db, addModelColumnQuery, -1, &alterModelStatement, nil) == SQLITE_OK {
+//            sqlite3_step(alterModelStatement) // This will fail if column already exists, which is fine
+//        }
+//        sqlite3_finalize(alterModelStatement)
         
         // Fix typo in existing provider data (migrate "Ollma" to "Ollama")
-        migrateProviderTypo()
-        
-        // Fix test data from debugging
-        do {
-            try fixTestModelData()
-        } catch {
-            print("Error fixing test model data: \(error)")
-        }
+        //migrateProviderTypo()
         
         //insertInitialDataIfNeeded()
     }
     
-    private func migrateProviderTypo() {
-        // Fix the typo "Ollma" to "Ollama" in existing database records
-        let updateQuery = "UPDATE questions SET provider = 'Ollama' WHERE provider = 'Ollma';"
-        var statement: OpaquePointer?
-        
-        if sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK {
-            sqlite3_step(statement)
-            let changes = sqlite3_changes(db)
-            if changes > 0 {
-                print("Migrated \(changes) records from 'Ollma' to 'Ollama'")
-            }
-        }
-        sqlite3_finalize(statement)
-    }
+//    private func migrateProviderTypo() {
+//        // Fix the typo "Ollma" to "Ollama" in existing database records
+//        let updateQuery = "UPDATE questions SET provider = 'Ollama' WHERE provider = 'Ollma';"
+//        var statement: OpaquePointer?
+//        
+//        if sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK {
+//            sqlite3_step(statement)
+//            let changes = sqlite3_changes(db)
+//            if changes > 0 {
+//                print("Migrated \(changes) records from 'Ollma' to 'Ollama'")
+//            }
+//        }
+//        sqlite3_finalize(statement)
+//    }
     
     private func insertInitialDataIfNeeded() {
         do {
@@ -303,28 +296,28 @@ class DatabaseManager {
             throw DatabaseError.executeFailed
         }
         
-        // First, let's check what records exist for this groupId
-        let checkQuery = "SELECT id, question FROM questions WHERE groupid = ? ORDER BY id ASC;"
-        var checkStatement: OpaquePointer?
-        
-        print("Checking existing records for groupId: \(groupId)")
-        
-        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
-            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
-            
-            while sqlite3_step(checkStatement) == SQLITE_ROW {
-                let id = Int(sqlite3_column_int(checkStatement, 0))
-                let question = String(cString: sqlite3_column_text(checkStatement, 1))
-                print("  Found record: id=\(id), question='\(question)'")
-            }
-        }
-        sqlite3_finalize(checkStatement)
+//        // First, let's check what records exist for this groupId
+//        let checkQuery = "SELECT id, question FROM questions WHERE groupid = ? ORDER BY id ASC;"
+//        var checkStatement: OpaquePointer?
+//        
+//        //print("Checking existing records for groupId: \(groupId)")
+//        
+//        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
+//            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
+//            
+//            while sqlite3_step(checkStatement) == SQLITE_ROW {
+//                let id = Int(sqlite3_column_int(checkStatement, 0))
+//                let question = String(cString: sqlite3_column_text(checkStatement, 1))
+//                //print("  Found record: id=\(id), question='\(question)'")
+//            }
+//        }
+//        sqlite3_finalize(checkStatement)
         
         // Now perform the update - update the title field of the first message in the group
         let updateQuery = "UPDATE questions SET title = ? WHERE groupid = ? AND id = (SELECT MIN(id) FROM questions WHERE groupid = ?);"
         var statement: OpaquePointer?
         
-        print("Updating chat name for groupId: \(groupId) to: '\(newName)'")
+        //print("Updating chat name for groupId: \(groupId) to: '\(newName)'")
         
         guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
             print("Failed to prepare update statement")
@@ -342,23 +335,23 @@ class DatabaseManager {
             throw DatabaseError.executeFailed
         }
         
-        let changes = sqlite3_changes(db)
-        print("Update completed, rows affected: \(changes)")
+        //let changes = sqlite3_changes(db)
+        //print("Update completed, rows affected: \(changes)")
         
         sqlite3_finalize(statement)
         
         // Verify the update worked
-        print("Verifying update...")
-        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
-            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
-            
-            while sqlite3_step(checkStatement) == SQLITE_ROW {
-                let id = Int(sqlite3_column_int(checkStatement, 0))
-                let question = String(cString: sqlite3_column_text(checkStatement, 1))
-                print("  After update: id=\(id), question='\(question)'")
-            }
-        }
-        sqlite3_finalize(checkStatement)
+        //print("Verifying update...")
+//        if sqlite3_prepare_v2(db, checkQuery, -1, &checkStatement, nil) == SQLITE_OK {
+//            sqlite3_bind_text(checkStatement, 1, (groupId as NSString).utf8String, -1, nil)
+//            
+//            while sqlite3_step(checkStatement) == SQLITE_ROW {
+//                let id = Int(sqlite3_column_int(checkStatement, 0))
+//                let question = String(cString: sqlite3_column_text(checkStatement, 1))
+//                //print("  After update: id=\(id), question='\(question)'")
+//            }
+//        }
+//        sqlite3_finalize(checkStatement)
     }
     
     func delete(id: Int) throws {
@@ -384,7 +377,7 @@ class DatabaseManager {
     
 
     func fetchQuestionsByGroupId(_ groupId: String) throws -> [(id: Int, question: String, answer: String, created: String, image: String?, engine: String)] {
-        print("Fetching questions for groupId: \(groupId)")
+        //print("Fetching questions for groupId: \(groupId)")
         let query = """
             SELECT id, question, answer, created, image, engine 
             FROM questions
@@ -409,12 +402,12 @@ class DatabaseManager {
             let image = sqlite3_column_text(statement, 4).map { String(cString: $0) }
             let engine = String(cString: sqlite3_column_text(statement, 5))
 
-            print("Found message: id=\(id), question='\(question.prefix(30))...', answer='\(answer.prefix(30))...', created=\(created)")
+            //print("Found message: id=\(id), question='\(question.prefix(30))...', answer='\(answer.prefix(30))...', created=\(created)")
             results.append((id, question, answer, created, image, engine))
         }
         
         sqlite3_finalize(statement)
-        print("Returning \(results.count) results for groupId: \(groupId)")
+        //print("Returning \(results.count) results for groupId: \(groupId)")
         return results
     }
     
@@ -561,27 +554,141 @@ class DatabaseManager {
         sqlite3_finalize(statement)
     }
     
-    // Fix test data in existing chat records
-    func fixTestModelData() throws {
-        // Only update records with "test-model" specifically, not all NULL values
-        let updateQuery = """
-            UPDATE questions 
-            SET model = engine 
-            WHERE model = 'test-model';
-        """
+    // DEBUG: Helper function to inspect all data in the database
+    func debugInspectDatabase() {
+        print("=== DEBUG: Database Inspection ===")
+        let query = "SELECT id, groupid, question, provider, model FROM questions ORDER BY groupid, id;"
         var statement: OpaquePointer?
         
-        guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
-            throw DatabaseError.prepareFailed
+        guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
+            print("Failed to prepare debug query")
+            return
         }
         
-        if sqlite3_step(statement) == SQLITE_DONE {
-            let changes = sqlite3_changes(db)
-            if changes > 0 {
-                print("Fixed \(changes) test-model records")
-            }
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let id = Int(sqlite3_column_int(statement, 0))
+            let groupId = String(cString: sqlite3_column_text(statement, 1))
+            let question = String(cString: sqlite3_column_text(statement, 2))
+            let provider = sqlite3_column_text(statement, 3).map { String(cString: $0) } ?? "nil"
+            let model = sqlite3_column_text(statement, 4).map { String(cString: $0) } ?? "nil"
+            
+            print("ID: \(id), GroupID: \(groupId), Question: \(question.prefix(30))..., Provider: \(provider), Model: \(model)")
         }
         
         sqlite3_finalize(statement)
+        print("=== End Database Inspection ===")
+    }
+    
+    // DEBUG: Force update a specific record for testing
+    func debugForceUpdateProviderModel(groupId: String, provider: String, model: String) {
+        let updateQuery = "UPDATE questions SET provider = ?, model = ? WHERE groupid = ?;"
+        var statement: OpaquePointer?
+        
+        print("DEBUG: Force updating groupId \(groupId) to provider: \(provider), model: \(model)")
+        
+        guard sqlite3_prepare_v2(db, updateQuery, -1, &statement, nil) == SQLITE_OK else {
+            print("Failed to prepare force update query")
+            return
+        }
+        
+        sqlite3_bind_text(statement, 1, (provider as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (model as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 3, (groupId as NSString).utf8String, -1, nil)
+        
+        if sqlite3_step(statement) == SQLITE_DONE {
+            let changes = sqlite3_changes(db)
+            print("DEBUG: Force update completed, rows affected: \(changes)")
+        } else {
+            print("DEBUG: Force update failed")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    // DEBUG: Check database schema
+    func debugInspectSchema() {
+        print("=== DEBUG: Database Schema ===")
+        let query = "PRAGMA table_info(questions);"
+        var statement: OpaquePointer?
+        
+        guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
+            print("Failed to prepare schema query")
+            return
+        }
+        
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let columnId = Int(sqlite3_column_int(statement, 0))
+            let columnName = String(cString: sqlite3_column_text(statement, 1))
+            let columnType = String(cString: sqlite3_column_text(statement, 2))
+            let notNull = sqlite3_column_int(statement, 3)
+            let defaultValue = sqlite3_column_text(statement, 4).map { String(cString: $0) } ?? "NULL"
+            let primaryKey = sqlite3_column_int(statement, 5)
+            
+            print("Column \(columnId): \(columnName) \(columnType) (NotNull: \(notNull), Default: \(defaultValue), PK: \(primaryKey))")
+        }
+        
+        sqlite3_finalize(statement)
+        print("=== End Database Schema ===")
+    }
+    
+    // DEBUG: Easy test function - call this manually with a real groupId
+    func debugTestProviderModelUpdate(groupId: String) {
+        print("\n🔧 Testing provider/model update for groupId: \(groupId)")
+        
+        // Show current state
+        do {
+            let (currentProvider, currentModel) = try getChatProviderAndModel(groupId: groupId)
+            print("BEFORE: provider=\(currentProvider ?? "nil"), model=\(currentModel ?? "nil")")
+        } catch {
+            print("Error getting current state: \(error)")
+        }
+        
+        // Force update
+        debugForceUpdateProviderModel(groupId: groupId, provider: "Ollama", model: "test-model")
+        
+        // Show updated state
+        do {
+            let (updatedProvider, updatedModel) = try getChatProviderAndModel(groupId: groupId)
+            print("AFTER: provider=\(updatedProvider ?? "nil"), model=\(updatedModel ?? "nil")")
+            
+            if updatedProvider == "Ollama" && updatedModel == "test-model" {
+                print("✅ SUCCESS: Provider/model update and retrieval works correctly!")
+            } else {
+                print("❌ FAILED: Values don't match what was saved")
+            }
+        } catch {
+            print("Error getting updated state: \(error)")
+        }
+    }
+    
+    // DEBUG: Test with a real model name
+    func debugTestProviderModelUpdateWithRealModel(groupId: String, model: String) {
+        print("\n🔧 Testing provider/model update with REAL model: \(model)")
+        
+        // Show current state
+        do {
+            let (currentProvider, currentModel) = try getChatProviderAndModel(groupId: groupId)
+            print("BEFORE: provider=\(currentProvider ?? "nil"), model=\(currentModel ?? "nil")")
+        } catch {
+            print("Error getting current state: \(error)")
+        }
+        
+        // Force update with real model
+        debugForceUpdateProviderModel(groupId: groupId, provider: "Ollama", model: model)
+        
+        // Show updated state
+        do {
+            let (updatedProvider, updatedModel) = try getChatProviderAndModel(groupId: groupId)
+            print("AFTER: provider=\(updatedProvider ?? "nil"), model=\(updatedModel ?? "nil")")
+            
+            if updatedProvider == "Ollama" && updatedModel == model {
+                print("✅ SUCCESS: Provider/model update with real model works!")
+                print("🎯 The database layer is working correctly. Issue is likely in UI synchronization.")
+            } else {
+                print("❌ FAILED: Values don't match what was saved")
+            }
+        } catch {
+            print("Error getting updated state: \(error)")
+        }
     }
 }

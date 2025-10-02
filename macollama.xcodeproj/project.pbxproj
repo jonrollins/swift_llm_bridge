@@ -18,7 +18,7 @@
 
 /* Begin PBXFileReference section */
 		9F0A32F62DF9BB98000A83B2 /* myollama.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myollama.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9F63C8C32D49F5C6001C2645 /* LocalLLM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalLLM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F63C8C32D49F5C6001C2645 /* LocalGPT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalGPT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -119,7 +119,7 @@
 		9F63C8C42D49F5C6001C2645 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9F63C8C32D49F5C6001C2645 /* LocalLLM.app */,
+				9F63C8C32D49F5C6001C2645 /* LocalGPT.app */,
 				9F0A32F62DF9BB98000A83B2 /* myollama.app */,
 			);
 			name = Products;
@@ -169,7 +169,7 @@
 			);
 			name = macollama;
 			productName = macollama;
-			productReference = 9F63C8C32D49F5C6001C2645 /* LocalLLM.app */;
+			productReference = 9F63C8C32D49F5C6001C2645 /* LocalGPT.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -474,7 +474,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = macollama/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "LLM-Bridge";
+				INFOPLIST_KEY_CFBundleDisplayName = LocalGPT;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -485,7 +485,7 @@
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rtlink.macollama;
 				PRODUCT_MODULE_NAME = macollama;
-				PRODUCT_NAME = LocalLLM;
+				PRODUCT_NAME = LocalGPT;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -511,7 +511,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = macollama/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "LLM-Bridge";
+				INFOPLIST_KEY_CFBundleDisplayName = LocalGPT;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -522,7 +522,7 @@
 				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rtlink.macollama;
 				PRODUCT_MODULE_NAME = macollama;
-				PRODUCT_NAME = LocalLLM;
+				PRODUCT_NAME = LocalGPT;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};

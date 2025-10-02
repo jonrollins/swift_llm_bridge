@@ -246,9 +246,7 @@ public class LLMBridge: ObservableObject {
                     
                     let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
                     request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
-                    if target == .openai, request.url?.path.contains("/v1/responses") == true, let body = request.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
-                        print("[LLMBridge] OpenAI Responses payload:", bodyStr)
-                    }
+                    // Removed print logging here as requested
                     
                     try await self.processStream(request: request)
                 }
@@ -368,9 +366,7 @@ public class LLMBridge: ObservableObject {
                             
                             let requestData = try createChatRequest(content: content, model: selectedModel, image: image)
                             request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
-                            if target == .openai, request.url?.path.contains("/v1/responses") == true, let body = request.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
-                                print("[LLMBridge] OpenAI Responses payload:", bodyStr)
-                            }
+                            // Removed print logging here as requested
                             
                             try await self.processStreamWithContinuation(request: request, continuation: continuation)
                         }

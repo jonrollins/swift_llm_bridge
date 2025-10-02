@@ -479,7 +479,7 @@ struct SettingsView: View {
                 ChatViewModel.shared.startNewChat()
                 dismiss()
             } catch {
-                print("Failed to delete all data: \(error)")
+                // Removed print statement as requested
             }
         }
     }
@@ -550,3 +550,4 @@ struct SettingsView: View {
         }
     }
 } 
+

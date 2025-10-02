@@ -258,7 +258,6 @@ struct DocumentPicker: UIViewControllerRepresentable {
         
         private func extractTextFromPDF(url: URL) -> String? {
             guard let pdfDocument = PDFDocument(url: url) else {
-                print("Failed to create PDF document from URL")
                 return nil
             }
             
@@ -280,12 +279,10 @@ struct DocumentPicker: UIViewControllerRepresentable {
                 let content = try String(contentsOf: url, encoding: .utf8)
                 return content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content
             } catch {
-                print("Failed to read text file: \(error.localizedDescription)")
                 do {
                     let content = try String(contentsOf: url, encoding: .utf16)
                     return content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : content
                 } catch {
-                    print("Failed to read text file with UTF-16: \(error.localizedDescription)")
                     return nil
                 }
             }
@@ -294,14 +291,10 @@ struct DocumentPicker: UIViewControllerRepresentable {
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
             guard let url = urls.first else { return }
             
-            print("file name: \(url.lastPathComponent)")
-            print("file type: \(url.pathExtension)")
-            
             let fileExtension = url.pathExtension.lowercased()
             let imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp"]
                         
             guard url.startAccessingSecurityScopedResource() else {
-                print("Failed to access security scoped resource")
                 parent.dismiss()
                 return
             }
@@ -318,8 +311,6 @@ struct DocumentPicker: UIViewControllerRepresentable {
                     DispatchQueue.main.async {
                         self.parent.selectedImage = resizedImage
                     }
-                } else {
-                    print("Failed to load image data or create UIImage")
                 }
             } else if fileExtension == "pdf" {
                 
@@ -327,8 +318,6 @@ struct DocumentPicker: UIViewControllerRepresentable {
                     DispatchQueue.main.async {
                         self.parent.selectedPDFText = extractedText
                     }
-                } else {
-                    print("Failed to extract text from PDF")
                 }
             } else if fileExtension == "txt" {
                 
@@ -336,11 +325,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
                     DispatchQueue.main.async {
                         self.parent.selectedTXTText = extractedText
                     }
-                } else {
-                    print("Failed to read text from TXT file")
                 }
-            } else {
-                print("Not a supported file type")
             }
             
             parent.dismiss()

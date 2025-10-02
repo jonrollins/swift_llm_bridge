@@ -55,10 +55,10 @@ struct RenameChatView: View {
     RenameChatView(
         currentName: "Sample Chat",
         onRename: { newName in
-            print("Renamed to: \(newName)")
+            // Rename action
         },
         onCancel: {
-            print("Cancelled")
+            // Cancel action
         }
     )
 }

@@ -236,8 +236,6 @@ struct MainChatView: View {
                 }
             }
             
-            print("DEBUG MainChat: About to save - provider: '\(viewModel.chatProvider.rawValue)', model: '\(viewModel.chatModel ?? "nil")'")
-            
             try DatabaseManager.shared.insert(
                 groupId: viewModel.chatId.uuidString,
                 instruction: UserDefaults.standard.string(forKey: "llmInstruction") ?? "",

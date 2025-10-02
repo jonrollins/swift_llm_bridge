@@ -42,9 +42,7 @@ class ChatViewModel: ObservableObject {
                     provider: chatProvider.rawValue,
                     model: chatModel
                 )
-                print("Saved provider: \(chatProvider.rawValue), model: \(chatModel ?? "none") for chat: \(chatId.uuidString)")
             } catch {
-                print("Failed to save provider and model: \(error)")
             }
         }
     }
@@ -52,16 +50,13 @@ class ChatViewModel: ObservableObject {
     @MainActor
     func loadChat(groupId: String) {
         do {
-            print("Loading chat for groupId: \(groupId)")
             let results = try DatabaseManager.shared.fetchQuestionsByGroupId(groupId)
-            print("Found \(results.count) message pairs for groupId: \(groupId)")
             
             messages = []
             
             let dateFormatter = ISO8601DateFormatter()
             
             for (index, result) in results.enumerated() {
-                print("Processing message pair \(index): id=\(result.id), question='\(result.question.prefix(50))...', answer='\(result.answer.prefix(50))...'")
                 
                 var image: PlatformImage? = nil
                 if let imageBase64 = result.image,
@@ -94,7 +89,6 @@ class ChatViewModel: ObservableObject {
                 ))
             }
             
-            print("Final message count: \(messages.count)")
             chatId = UUID(uuidString: groupId) ?? UUID()
             
             // Load provider and model settings for this chat
@@ -102,17 +96,13 @@ class ChatViewModel: ObservableObject {
                 let (provider, model) = try DatabaseManager.shared.getChatProviderAndModel(groupId: groupId)
                 if let providerString = provider, let providerEnum = LLMProvider(rawValue: providerString) {
                     self.chatProvider = providerEnum
-                    print("Loaded provider: \(providerString) for chat: \(groupId)")
                 }
                 if let model = model {
                     self.chatModel = model
-                    print("Loaded model: \(model) for chat: \(groupId)")
                 }
             } catch {
-                print("Failed to load provider and model for chat: \(error)")
             }
         } catch {
-            print("Failed to load chat: \(error)")
         }
     }
 } 

@@ -22,11 +22,9 @@ class SidebarViewModel: ObservableObject {
                     provider: result.provider,
                     model: result.model
                 )
-                print("Loaded chat: ID=\(result.id), GroupId=\(result.groupId), Question='\(result.question)', Date=\(result.created)")
                 return chatTitle
             }
         } catch {
-            print("Failed to load chat titles: \(error)")
         }
     }
     
@@ -38,10 +36,8 @@ class SidebarViewModel: ObservableObject {
     func renameChat(groupId: String, newName: String) async throws {
         do {
             try DatabaseManager.shared.updateChatName(groupId: groupId, newName: newName)
-            print("Successfully renamed chat \(groupId) to '\(newName)'")
             await loadChatTitles()
         } catch {
-            print("Failed to rename chat: \(error)")
             throw error
         }
     }
@@ -70,7 +66,7 @@ class SidebarViewModel: ObservableObject {
                 )
             }
         } catch {
-            print("Failed to search chat titles: \(error)")
         }
     }
 } 
+

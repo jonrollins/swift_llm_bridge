@@ -200,9 +200,7 @@ struct SidebarView: View {
                         Task {
                             do {
                                 try await viewModel.renameChat(groupId: chat.groupId, newName: newName)
-                                print("Chat renamed successfully")
                             } catch {
-                                print("Error renaming chat: \(error)")
                             }
                         }
                     }
