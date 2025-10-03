@@ -12,11 +12,11 @@ import MarkdownUI
 extension Theme {
     static let customSmall = Theme()
         .text {
-            FontSize(14)
+            FontSize(16)
         }
         .code {
-            FontFamilyVariant(.monospaced)
-            FontSize(12)
+            FontFamilyVariant(.normal)
+            FontSize(16)
         }
         .heading1 { configuration in
             configuration.label

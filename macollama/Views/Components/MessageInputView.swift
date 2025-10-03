@@ -46,6 +46,8 @@ struct MessageInputView: View {
     
     private var messageEditor: some View {
         TextEditor(text: $viewModel.messageText)
+            .font(.system(size: 16, weight: .regular, design: .rounded)) // or .monospaced()
+            .foregroundColor(.primary) // or Color(NSColor.secondaryLabelColor)
             .frame(height: textEditorHeight)
             .padding(8)
             .cornerRadius(8)
