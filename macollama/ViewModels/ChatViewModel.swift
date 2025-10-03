@@ -72,7 +72,7 @@ class ChatViewModel: ObservableObject {
             
             let dateFormatter = ISO8601DateFormatter()
             
-            for (index, result) in results.enumerated() {
+            for (_, result) in results.enumerated() {
                 
                 var image: PlatformImage? = nil
                 if let imageBase64 = result.image,
