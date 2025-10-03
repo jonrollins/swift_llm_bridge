@@ -55,21 +55,16 @@ struct ModelSelectionMenu: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        Text("Provider:")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                        Text(selectedProvider.displayName)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                        Image(systemName: "cpu")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundColor(.secondary)
-                    }
+                    Text("Provider: \(selectedProvider.displayName)")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
-                .frame(width: 220)
+                .frame(minWidth: 240, alignment: .leading)
+                .menuStyle(.borderedButton)
             } else {
                 // Single provider configured; show label and name without dropdown
                 HStack(spacing: 6) {
@@ -77,12 +72,19 @@ struct ModelSelectionMenu: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
                     Text(selectedProvider.displayName)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(2)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
-                .frame(width: 220, alignment: .leading)
+                .frame(minWidth: 220, maxWidth: 400, alignment: .leading)
             }
             
             Menu {
@@ -135,4 +137,3 @@ struct ModelSelectionMenu: View {
         }
     }
 } 
-

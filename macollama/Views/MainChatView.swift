@@ -126,8 +126,16 @@ struct MainChatView: View {
         .onChange(of: selectedModel) {
             viewModel.updateProviderAndModel(selectedProvider, selectedModel)
         }
+        .onChange(of: viewModel.chatId) {
+            // When a different chat is loaded, prefer its saved provider/model
+            selectedProvider = viewModel.chatProvider
+            if let cm = viewModel.chatModel { selectedModel = cm }
+        }
         .onAppear {
             viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+            // Align bindings with the chat’s saved values if present
+            selectedProvider = viewModel.chatProvider
+            if let cm = viewModel.chatModel { selectedModel = cm }
         }
     }
     
@@ -268,3 +276,4 @@ struct MainChatView: View {
         tokenCount = 0
     }
 }
+

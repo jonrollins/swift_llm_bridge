@@ -17,6 +17,22 @@ class ChatViewModel: ObservableObject {
     @Published var chatModel: String? = nil
     
     private init() {}
+
+    private func normalizedProvider(from string: String) -> LLMProvider? {
+        let s = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch s {
+        case "ollama", "ollma", "ollama server":
+            return .ollama
+        case "lmstudio", "lm studio":
+            return .lmstudio
+        case "claude", "anthropic":
+            return .claude
+        case "openai", "gpt":
+            return .openai
+        default:
+            return LLMProvider(rawValue: string)
+        }
+    }
     
     func startNewChat() {
         messages.removeAll()
@@ -94,8 +110,10 @@ class ChatViewModel: ObservableObject {
             // Load provider and model settings for this chat
             do {
                 let (provider, model) = try DatabaseManager.shared.getChatProviderAndModel(groupId: groupId)
-                if let providerString = provider, let providerEnum = LLMProvider(rawValue: providerString) {
-                    self.chatProvider = providerEnum
+                if let providerString = provider {
+                    if let providerEnum = normalizedProvider(from: providerString) {
+                        self.chatProvider = providerEnum
+                    }
                 }
                 if let model = model {
                     self.chatModel = model

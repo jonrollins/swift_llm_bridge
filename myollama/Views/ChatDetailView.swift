@@ -68,15 +68,17 @@ struct ChatDetailView: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "server.rack")
+                    Label {
                         Text(selectedProvider.displayName)
                             .font(.headline)
                             .foregroundColor(.primary)
-                        Image(systemName: "chevron.down")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .fixedSize(horizontal: true, vertical: false)
+                    } icon: {
+                        Image(systemName: "server.rack")
                     }
+                    .labelStyle(.titleAndIcon)
                 }
             }
             
@@ -118,10 +120,21 @@ struct ChatDetailView: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(selectedProvider.displayName)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(2)
+                        Text("•")
+                            .foregroundColor(.secondary)
                         Text(selectedModel ?? "l_model_select".localized)
                             .font(.headline)
                             .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .foregroundColor(.secondary)
