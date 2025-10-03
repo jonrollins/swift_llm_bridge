@@ -370,9 +370,14 @@ struct SettingsView: View {
         connectionTestResult = nil
         
         Task {
+            guard let url = URL(string: serverAddress) else {
+                connectionTestResult = "l_connection_fail".localized
+                isTestingConnection = false
+                return
+            }
+
             do {
-                let url = URL(string: serverAddress)
-                var request = URLRequest(url: url!)
+                var request = URLRequest(url: url)
                 request.httpMethod = "GET"
                 request.timeoutInterval = 10.0
                 
@@ -398,9 +403,14 @@ struct SettingsView: View {
         lmStudioConnectionTestResult = nil
         
         Task {
+            guard let url = URL(string: lmStudioAddress) else {
+                lmStudioConnectionTestResult = "l_connection_fail".localized
+                isTestingLMStudioConnection = false
+                return
+            }
+
             do {
-                let url = URL(string: lmStudioAddress)
-                var request = URLRequest(url: url!)
+                var request = URLRequest(url: url)
                 request.httpMethod = "GET"
                 request.timeoutInterval = 10.0
                 
