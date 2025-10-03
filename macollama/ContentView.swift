@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    static let shared = ContentView()
-    
     @State private var columnVisibility = NavigationSplitViewVisibility.automatic
     @State private var showingSettings = false
     @State private var models: [String] = []
@@ -55,7 +53,10 @@ struct ContentView: View {
             )
         }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(isPresented: $showingSettings)
+            SettingsView(
+                isPresented: $showingSettings,
+                onReloadModels: { await loadModels() }
+            )
         }
         .task {
             await loadModels()

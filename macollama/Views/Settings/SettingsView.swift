@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var isPresented: Bool
+    private let onReloadModels: @Sendable () async -> Void
     @State private var serverAddress: String = UserDefaults.standard.string(forKey: "ollama_base_url") ?? "http://localhost:11434"
     @State private var lmStudioAddress: String = UserDefaults.standard.string(forKey: "lmStudioAddress") ?? "http://localhost:1234"
     @State private var claudeApiKey: String = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
@@ -20,8 +21,12 @@ struct SettingsView: View {
     @State private var isTestingLMStudioConnection = false
     @State private var lmStudioConnectionTestResult: String?
     
-    init(isPresented: Binding<Bool> = .constant(false)) {
+    init(
+        isPresented: Binding<Bool> = .constant(false),
+        onReloadModels: @escaping @Sendable () async -> Void = {}
+    ) {
         self._isPresented = isPresented
+        self.onReloadModels = onReloadModels
     }
     
     var body: some View {
@@ -36,7 +41,7 @@ struct SettingsView: View {
                             }
                             .onChange(of: showOllama) {
                                 Task {
-                                    await ContentView.shared.loadModels()
+                                    await onReloadModels()
                                 }
                             }
                         }
@@ -85,7 +90,7 @@ struct SettingsView: View {
                             }
                             .onChange(of: showLMStudio) {
                                 Task {
-                                    await ContentView.shared.loadModels()
+                                    await onReloadModels()
                                 }
                             }
                         }
@@ -134,7 +139,7 @@ struct SettingsView: View {
                             }
                             .onChange(of: showClaude) {
                                 Task {
-                                    await ContentView.shared.loadModels()
+                                    await onReloadModels()
                                 }
                             }
                             .disabled(claudeApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -169,7 +174,7 @@ struct SettingsView: View {
                             }
                             .onChange(of: showOpenAI) {
                                 Task {
-                                    await ContentView.shared.loadModels()
+                                    await onReloadModels()
                                 }
                             }
                             .disabled(openaiApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -318,7 +323,7 @@ struct SettingsView: View {
                         saveSettings()
                         isPresented = false
                         Task {
-                            await ContentView.shared.loadModels()
+                            await onReloadModels()
                         }
                     }
                 }
