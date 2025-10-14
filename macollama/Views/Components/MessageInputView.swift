@@ -181,7 +181,10 @@ struct MessageInputView: View {
         .onChange(of: viewModel.shouldFocusTextField) { oldValue, newValue in
             if newValue {
                 isTextFieldFocused = true
-                viewModel.shouldFocusTextField = false
+                // Reset the flag in the next update cycle to prevent infinite loop
+                Task { @MainActor in
+                    viewModel.shouldFocusTextField = false
+                }
             }
         }
     }

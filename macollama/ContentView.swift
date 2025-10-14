@@ -88,27 +88,33 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.2), value: showCopyAlert)
         .background(Color(NSColor.windowBackgroundColor))
         .onReceive(chatViewModel.$chatProvider) { provider in
-            selectedProvider = provider
+            if selectedProvider != provider {
+                selectedProvider = provider
+            }
         }
         .onReceive(chatViewModel.$chatModel) { model in
-            if let model = model {
+            if let model = model, selectedModel != model {
                 selectedModel = model
             }
         }
-        .onChange(of: selectedProvider) {
-            // Update ChatViewModel when user changes provider in UI
-            chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
-            // Save to database if this is an existing chat
-            if chatViewModel.chatId != UUID() {
-                chatViewModel.saveProviderAndModel()
+        .onChange(of: selectedProvider) { oldValue, newValue in
+            // Only update if this change came from UI interaction, not from onReceive
+            if oldValue != newValue && chatViewModel.chatProvider != newValue {
+                chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
+                // Save to database if this is an existing chat
+                if chatViewModel.chatId != UUID() {
+                    chatViewModel.saveProviderAndModel()
+                }
             }
         }
-        .onChange(of: selectedModel) {
-            // Update ChatViewModel when user changes model in UI
-            chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
-            // Save to database if this is an existing chat
-            if chatViewModel.chatId != UUID() {
-                chatViewModel.saveProviderAndModel()
+        .onChange(of: selectedModel) { oldValue, newValue in
+            // Only update if this change came from UI interaction, not from onReceive
+            if oldValue != newValue && chatViewModel.chatModel != newValue {
+                chatViewModel.updateProviderAndModel(selectedProvider, selectedModel)
+                // Save to database if this is an existing chat
+                if chatViewModel.chatId != UUID() {
+                    chatViewModel.saveProviderAndModel()
+                }
             }
         }
     }

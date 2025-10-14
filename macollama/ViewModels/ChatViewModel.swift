@@ -39,7 +39,10 @@ class ChatViewModel: ObservableObject {
         selectedImage = nil
         messageText = ""
         chatId = UUID()
-        shouldFocusTextField = true
+        // Use a task to set focus flag asynchronously to prevent update loops
+        Task { @MainActor in
+            shouldFocusTextField = true
+        }
         // Note: Keep the current chatProvider and chatModel for the new chat
     }
     

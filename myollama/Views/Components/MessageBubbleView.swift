@@ -52,15 +52,8 @@ struct MessageBubbleView: View {
                 }
                 
                 if !message.isUser && message.content.trimmingCharacters(in: .whitespacesAndNewlines) == "..." {
-                    HStack {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("Thinking...")
-                            .foregroundColor(.gray)
-                            .font(.caption)
-                    }
-                    .frame(height: 20)
-                    .padding(10)
+                    ThinkingIndicatorView()
+                        .padding(10)
                 } else {
                     Markdown(message.content)
                         .markdownTheme(.customSmall)
@@ -107,4 +100,56 @@ struct ActivityView: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct ThinkingIndicatorView: View {
+    @State private var animationOffset: CGFloat = 0
+    @State private var dotOpacities: [Double] = [1.0, 0.5, 0.3]
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            // Animated thinking dots
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(Color.blue)
+                        .frame(width: 8, height: 8)
+                        .opacity(dotOpacities[index])
+                        .animation(
+                            Animation.easeInOut(duration: 0.6)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.2),
+                            value: dotOpacities[index]
+                        )
+                }
+            }
+            
+            // Thinking text
+            Text("AI is thinking...")
+                .foregroundColor(.gray)
+                .font(.caption)
+                .opacity(0.8)
+        }
+        .frame(height: 20)
+        .onAppear {
+            startAnimation()
+        }
+    }
+    
+    private func startAnimation() {
+        withAnimation {
+            for index in 0..<dotOpacities.count {
+                dotOpacities[index] = [0.3, 1.0, 0.5][index]
+            }
+        }
+        
+        Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+            withAnimation {
+                let temp = dotOpacities[0]
+                dotOpacities[0] = dotOpacities[1]
+                dotOpacities[1] = dotOpacities[2]
+                dotOpacities[2] = temp
+            }
+        }
+    }
 } 
