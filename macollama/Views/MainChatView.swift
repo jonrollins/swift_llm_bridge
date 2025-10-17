@@ -24,118 +24,192 @@ struct MainChatView: View {
     let onCopyAllMessages: () -> Void
     
     var body: some View {
+        mainContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onChange(of: selectedProvider) { _, newProvider in
+                handleProviderChange(newProvider)
+            }
+            .onChange(of: selectedModel) { _, newModel in
+                handleModelChange(newModel)
+            }
+            .onChange(of: viewModel.chatId) { _, _ in
+                handleChatIdChange()
+            }
+            .onAppear {
+                handleViewAppear()
+            }
+    }
+    
+    private var mainContent: some View {
         VStack(spacing: 0) {
-            // Model Selection Header
-            modelSelectionHeader
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(
-                    Group {
-                        if #available(macOS 15, *) {
-                            Color.clear
-                                .modifier(GlassEffectModifier())
-                        } else {
-                            Color.gray.opacity(0.05)
-                        }
-                    }
-                )
+            headerSection
             
             Divider()
             
-            // Chat Messages Area
-            ScrollViewReader { proxy in
-                ScrollView {
-                    Group {
-                        if #available(macOS 15, *) {
-                            GlassEffectContainer(spacing: 24) {
-                                LazyVStack(spacing: 20) {
-                                    ForEach(viewModel.messages) { message in
-                                        VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
-                                            MessageBubble(message: message)
-                                        }
-                                        .id(message.id)
-                                    }
-                                    Color.clear
-                                        .frame(height: 1)
-                                        .id(bottomID)
-                                }
-                            }
-                        } else {
-                            LazyVStack(spacing: 20) {
-                                ForEach(viewModel.messages) { message in
-                                    VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
-                                        MessageBubble(message: message)
-                                    }
-                                    .id(message.id)
-                                }
-                                Color.clear
-                                    .frame(height: 1)
-                                    .id(bottomID)
-                            }
-                        }
-                    }
+            chatMessagesSection
+            
+            Divider()
+            
+            inputSection
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: selectedProvider) { _, newProvider in
+            if newProvider != viewModel.chatProvider {
+                viewModel.updateProviderAndModel(newProvider, selectedModel)
+            }
+        }
+        .onChange(of: selectedModel) { _, newModel in
+            if newModel != viewModel.chatModel {
+                viewModel.updateProviderAndModel(selectedProvider, newModel)
+            }
+        }
+        .onChange(of: viewModel.chatId) { _, _ in
+            // When a different chat is loaded, prefer its saved provider/model
+            // Only update if different to prevent feedback loops
+            if selectedProvider != viewModel.chatProvider {
+                selectedProvider = viewModel.chatProvider
+            }
+            if let cm = viewModel.chatModel, selectedModel != cm {
+                selectedModel = cm
+            }
+        }
+        .onAppear {
+            // Only update if different to prevent feedback loops
+            if selectedProvider != viewModel.chatProvider || selectedModel != viewModel.chatModel {
+                viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+            }
+            // Align bindings with the chat’s saved values if present
+            if selectedProvider != viewModel.chatProvider {
+                selectedProvider = viewModel.chatProvider
+            }
+            if let cm = viewModel.chatModel, selectedModel != cm {
+                selectedModel = cm
+            }
+        }
+    }
+    
+    // MARK: - View Components
+    private var headerSection: some View {
+        modelSelectionHeader
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(headerBackground)
+    }
+    
+    private var headerBackground: some View {
+        Group {
+            if #available(macOS 15, *) {
+                Color.clear
+                    .modifier(GlassEffectModifier())
+            } else {
+                Color.gray.opacity(0.05)
+            }
+        }
+    }
+    
+    private var chatMessagesSection: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                messagesContent
                     .padding()
+            }
+            .onChange(of: viewModel.messages.count) { _, _ in
+                // Immediate scroll for new messages
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo(bottomID, anchor: .bottom)
                 }
-                .onChange(of: viewModel.messages.count) {
+            }
+            .onChange(of: viewModel.messages.last?.content) { _, _ in
+                // Always scroll when content changes, with different animations based on state
+                if isGenerating {
+                    // Fast scroll during streaming
+                    withAnimation(.linear(duration: 0.1)) {
+                        proxy.scrollTo(bottomID, anchor: .bottom)
+                    }
+                } else {
+                    // Smooth scroll when not generating (final updates)
                     withAnimation(.easeOut(duration: 0.3)) {
-                        scrollToBottom(proxy: proxy)
-                    }
-                }
-                .onChange(of: viewModel.messages.last?.content) {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        scrollToBottom(proxy: proxy)
-                    }
-                }
-                .onReceive(viewModel.$messages) { _ in
-                    if isGenerating {
-                        withAnimation(.easeOut(duration: 0.1)) {
-                            scrollToBottom(proxy: proxy)
-                        }
+                        proxy.scrollTo(bottomID, anchor: .bottom)
                     }
                 }
             }
-            
-            Divider()
-            
-            // Message Input Area
-            MessageInputView(
-                viewModel: viewModel,
-                selectedModel: $selectedModel,
-                isGenerating: $isGenerating,
-                isLoadingModels: $isLoadingModels,
-                onSendMessage: { Task { await sendMessage() } },
-                onCancelGeneration: {
-                    LLMService.shared.cancelGeneration()
-                    isGenerating = false
+            .onAppear {
+                // Small delay on appear to ensure layout is ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo(bottomID, anchor: .bottom)
+                    }
                 }
-            )
-            .padding(8)
-            .modifier(GlassEffectModifier())
-            .background(
-                Group {
-                    if #available(macOS 15, *) { Color.clear } else { Color.gray.opacity(0.08) }
+            }
+        }
+    }
+    
+    private var messagesContent: some View {
+        Group {
+            if #available(macOS 15, *) {
+                modernMessagesLayout
+            } else {
+                legacyMessagesLayout
+            }
+        }
+    }
+    
+    private var modernMessagesLayout: some View {
+        GlassEffectContainer(spacing: 24) {
+            LazyVStack(spacing: 20) {
+                ForEach(viewModel.messages) { message in
+                    VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
+                        MessageBubble(message: message)
+                    }
+                    .id(message.id)
                 }
-            )
-            .padding([.leading, .trailing])
-            .padding(.bottom, 8)
+                Color.clear
+                    .frame(height: 1)
+                    .id(bottomID)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: selectedProvider) {
-            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+    }
+    
+    private var legacyMessagesLayout: some View {
+        LazyVStack(spacing: 20) {
+            ForEach(viewModel.messages) { message in
+                VStack(alignment: HorizontalAlignment.trailing, spacing: 4) {
+                    MessageBubble(message: message)
+                }
+                .id(message.id)
+            }
+            Color.clear
+                .frame(height: 1)
+                .id(bottomID)
         }
-        .onChange(of: selectedModel) {
-            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
-        }
-        .onChange(of: viewModel.chatId) {
-            // When a different chat is loaded, prefer its saved provider/model
-            selectedProvider = viewModel.chatProvider
-            if let cm = viewModel.chatModel { selectedModel = cm }
-        }
-        .onAppear {
-            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
-            // Align bindings with the chat’s saved values if present
-            selectedProvider = viewModel.chatProvider
-            if let cm = viewModel.chatModel { selectedModel = cm }
+    }
+    
+    private var inputSection: some View {
+        MessageInputView(
+            viewModel: viewModel,
+            selectedModel: $selectedModel,
+            isGenerating: $isGenerating,
+            isLoadingModels: $isLoadingModels,
+            onSendMessage: { Task { await sendMessage() } },
+            onCancelGeneration: {
+                LLMService.shared.cancelGeneration()
+                isGenerating = false
+            }
+        )
+        .padding(8)
+        .modifier(GlassEffectModifier())
+        .background(inputBackground)
+        .padding([.leading, .trailing])
+        .padding(.bottom, 8)
+    }
+    
+    private var inputBackground: some View {
+        Group {
+            if #available(macOS 15, *) { 
+                Color.clear 
+            } else { 
+                Color.gray.opacity(0.08) 
+            }
         }
     }
     
@@ -155,8 +229,57 @@ struct MainChatView: View {
     }
     
     // MARK: - Helper Methods
+    private func scrollToBottomAsync(proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            withAnimation(.easeOut(duration: 0.3)) {
+                proxy.scrollTo(bottomID, anchor: .bottom)
+            }
+        }
+    }
+    
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        proxy.scrollTo(bottomID, anchor: UnitPoint.bottom)
+        DispatchQueue.main.async {
+            withAnimation(.none) {
+                proxy.scrollTo(bottomID, anchor: UnitPoint.bottom)
+            }
+        }
+    }
+    
+    private func handleProviderChange(_ newProvider: LLMProvider) {
+        if newProvider != viewModel.chatProvider {
+            viewModel.updateProviderAndModel(newProvider, selectedModel)
+        }
+    }
+    
+    private func handleModelChange(_ newModel: String?) {
+        if newModel != viewModel.chatModel {
+            viewModel.updateProviderAndModel(selectedProvider, newModel)
+        }
+    }
+    
+    private func handleChatIdChange() {
+        // When a different chat is loaded, prefer its saved provider/model
+        // Only update if different to prevent feedback loops
+        if selectedProvider != viewModel.chatProvider {
+            selectedProvider = viewModel.chatProvider
+        }
+        if let cm = viewModel.chatModel, selectedModel != cm {
+            selectedModel = cm
+        }
+    }
+    
+    private func handleViewAppear() {
+        // Only update if different to prevent feedback loops
+        if selectedProvider != viewModel.chatProvider || selectedModel != viewModel.chatModel {
+            viewModel.updateProviderAndModel(selectedProvider, selectedModel)
+        }
+        // Align bindings with the chat's saved values if present
+        if selectedProvider != viewModel.chatProvider {
+            selectedProvider = viewModel.chatProvider
+        }
+        if let cm = viewModel.chatModel, selectedModel != cm {
+            selectedModel = cm
+        }
     }
     
     private func sendMessage() async {
@@ -197,8 +320,12 @@ struct MainChatView: View {
         )
         viewModel.messages.append(waitingMessage)
         
+        // Small delay to ensure UI updates and scrolling happen
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        
         do {
             var fullResponse = ""
+            var updateCounter = 0
             let stream = try await LLMService.shared.generateResponse(
                 prompt: currentText,
                 image: currentImage,
@@ -208,29 +335,38 @@ struct MainChatView: View {
             for try await response in stream {
                 fullResponse += response
                 tokenCount += response.count
-                if let index = viewModel.messages.lastIndex(where: { !$0.isUser }) {
-                    let updatedMessage = ChatMessage(
-                        id: viewModel.messages[index].id,
-                        content: fullResponse,
-                        isUser: false,
-                        timestamp: viewModel.messages[index].timestamp,
-                        image: nil,
-                        engine: selectedModel
-                    )
+                updateCounter += 1
+                
+                // Update UI every 5 tokens or on longer delays to reduce flicker
+                if updateCounter % 5 == 0 || response.count > 10 {
                     await MainActor.run {
-                        viewModel.messages[index] = updatedMessage
+                        if let index = viewModel.messages.lastIndex(where: { !$0.isUser }) {
+                            let updatedMessage = ChatMessage(
+                                id: viewModel.messages[index].id,
+                                content: fullResponse,
+                                isUser: false,
+                                timestamp: viewModel.messages[index].timestamp,
+                                image: nil,
+                                engine: selectedModel
+                            )
+                            viewModel.messages[index] = updatedMessage
+                        }
                     }
                 }
             }
             
+            // Create final message with stats in one update to prevent blank view
             var statsMessage = ""
             if let startTime = responseStartTime {
                 let elapsedTime = Date().timeIntervalSince(startTime)
                 let tokensPerSecond = Double(tokenCount) / elapsedTime
                 statsMessage = "\n\n---\n [\(selectedModel)] \(String(format: "%.1f", tokensPerSecond)) tokens/sec"
-                
+            }
+            
+            // Single final update with complete content including stats
+            await MainActor.run {
                 if let index = viewModel.messages.lastIndex(where: { !$0.isUser }) {
-                    let updatedMessage = ChatMessage(
+                    let finalMessage = ChatMessage(
                         id: viewModel.messages[index].id,
                         content: fullResponse + statsMessage,
                         isUser: false,
@@ -238,9 +374,7 @@ struct MainChatView: View {
                         image: nil,
                         engine: selectedModel
                     )
-                    await MainActor.run {
-                        viewModel.messages[index] = updatedMessage
-                    }
+                    viewModel.messages[index] = finalMessage
                 }
             }
             
