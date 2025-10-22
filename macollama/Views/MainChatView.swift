@@ -18,74 +18,42 @@ struct MainChatView: View {
     @State private var isGenerating = false
     @State private var responseStartTime: Date?
     @State private var tokenCount: Int = 0
-    
+    @State private var scrollTrigger = UUID()
+
     let onProviderChange: () async -> Void
     let onModelRefresh: () async -> Void
     let onCopyAllMessages: () -> Void
-    
+
     var body: some View {
         mainContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onChange(of: selectedProvider) { _, newProvider in
-                handleProviderChange(newProvider)
+                syncProviderToViewModel(newProvider)
             }
             .onChange(of: selectedModel) { _, newModel in
-                handleModelChange(newModel)
+                syncModelToViewModel(newModel)
             }
             .onChange(of: viewModel.chatId) { _, _ in
-                handleChatIdChange()
+                syncViewModelToBindings()
             }
             .onAppear {
-                handleViewAppear()
+                initializeBindings()
             }
     }
-    
+
     private var mainContent: some View {
         VStack(spacing: 0) {
             headerSection
-            
+
             Divider()
-            
+
             chatMessagesSection
-            
+
             Divider()
-            
+
             inputSection
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: selectedProvider) { _, newProvider in
-            if newProvider != viewModel.chatProvider {
-                viewModel.updateProviderAndModel(newProvider, selectedModel)
-            }
-        }
-        .onChange(of: selectedModel) { _, newModel in
-            if newModel != viewModel.chatModel {
-                viewModel.updateProviderAndModel(selectedProvider, newModel)
-            }
-        }
-        .onChange(of: viewModel.chatId) { _, _ in
-            // When a different chat is loaded, prefer its saved provider/model
-            // Only update if different to prevent feedback loops
-            if selectedProvider != viewModel.chatProvider {
-                selectedProvider = viewModel.chatProvider
-            }
-            if let cm = viewModel.chatModel, selectedModel != cm {
-                selectedModel = cm
-            }
-        }
-        .onAppear {
-            // Only update if different to prevent feedback loops
-            if selectedProvider != viewModel.chatProvider || selectedModel != viewModel.chatModel {
-                viewModel.updateProviderAndModel(selectedProvider, selectedModel)
-            }
-            // Align bindings with the chat’s saved values if present
-            if selectedProvider != viewModel.chatProvider {
-                selectedProvider = viewModel.chatProvider
-            }
-            if let cm = viewModel.chatModel, selectedModel != cm {
-                selectedModel = cm
-            }
-        }
     }
     
     // MARK: - View Components
@@ -113,32 +81,19 @@ struct MainChatView: View {
                 messagesContent
                     .padding()
             }
+            .onChange(of: scrollTrigger) { _, _ in
+                scrollToBottom(proxy: proxy)
+            }
             .onChange(of: viewModel.messages.count) { _, _ in
-                // Immediate scroll for new messages
-                withAnimation(.easeOut(duration: 0.3)) {
-                    proxy.scrollTo(bottomID, anchor: .bottom)
-                }
+                triggerScroll()
             }
             .onChange(of: viewModel.messages.last?.content) { _, _ in
-                // Always scroll when content changes, with different animations based on state
-                if isGenerating {
-                    // Fast scroll during streaming
-                    withAnimation(.linear(duration: 0.1)) {
-                        proxy.scrollTo(bottomID, anchor: .bottom)
-                    }
-                } else {
-                    // Smooth scroll when not generating (final updates)
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        proxy.scrollTo(bottomID, anchor: .bottom)
-                    }
-                }
+                triggerScroll()
             }
             .onAppear {
                 // Small delay on appear to ensure layout is ready
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        proxy.scrollTo(bottomID, anchor: .bottom)
-                    }
+                    triggerScroll()
                 }
             }
         }
@@ -229,56 +184,55 @@ struct MainChatView: View {
     }
     
     // MARK: - Helper Methods
-    private func scrollToBottomAsync(proxy: ScrollViewProxy) {
-        DispatchQueue.main.async {
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo(bottomID, anchor: .bottom)
-            }
-        }
+
+    // MARK: Scroll Management
+    private func triggerScroll() {
+        scrollTrigger = UUID()
     }
-    
+
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        DispatchQueue.main.async {
-            withAnimation(.none) {
-                proxy.scrollTo(bottomID, anchor: UnitPoint.bottom)
-            }
+        let animation: Animation = isGenerating
+            ? .linear(duration: 0.1)  // Fast scroll during streaming
+            : .easeOut(duration: 0.3) // Smooth scroll otherwise
+
+        withAnimation(animation) {
+            proxy.scrollTo(bottomID, anchor: .bottom)
         }
     }
-    
-    private func handleProviderChange(_ newProvider: LLMProvider) {
-        if newProvider != viewModel.chatProvider {
-            viewModel.updateProviderAndModel(newProvider, selectedModel)
-        }
+
+    // MARK: State Synchronization
+    private func syncProviderToViewModel(_ newProvider: LLMProvider) {
+        guard newProvider != viewModel.chatProvider else { return }
+        viewModel.updateProviderAndModel(newProvider, selectedModel)
     }
-    
-    private func handleModelChange(_ newModel: String?) {
-        if newModel != viewModel.chatModel {
-            viewModel.updateProviderAndModel(selectedProvider, newModel)
-        }
+
+    private func syncModelToViewModel(_ newModel: String?) {
+        guard newModel != viewModel.chatModel else { return }
+        viewModel.updateProviderAndModel(selectedProvider, newModel)
     }
-    
-    private func handleChatIdChange() {
-        // When a different chat is loaded, prefer its saved provider/model
-        // Only update if different to prevent feedback loops
+
+    private func syncViewModelToBindings() {
+        // When a different chat is loaded, sync saved provider/model to bindings
         if selectedProvider != viewModel.chatProvider {
             selectedProvider = viewModel.chatProvider
         }
-        if let cm = viewModel.chatModel, selectedModel != cm {
-            selectedModel = cm
+        if let chatModel = viewModel.chatModel, selectedModel != chatModel {
+            selectedModel = chatModel
         }
     }
-    
-    private func handleViewAppear() {
-        // Only update if different to prevent feedback loops
+
+    private func initializeBindings() {
+        // Initialize bindings on view appear
         if selectedProvider != viewModel.chatProvider || selectedModel != viewModel.chatModel {
             viewModel.updateProviderAndModel(selectedProvider, selectedModel)
         }
-        // Align bindings with the chat's saved values if present
+
+        // Sync ViewModel state to bindings if needed
         if selectedProvider != viewModel.chatProvider {
             selectedProvider = viewModel.chatProvider
         }
-        if let cm = viewModel.chatModel, selectedModel != cm {
-            selectedModel = cm
+        if let chatModel = viewModel.chatModel, selectedModel != chatModel {
+            selectedModel = chatModel
         }
     }
     
