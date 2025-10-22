@@ -557,6 +557,7 @@ class DatabaseManager {
         sqlite3_finalize(statement)
     }
     
+    #if DEBUG
     // DEBUG: Helper function to inspect all data in the database
     func debugInspectDatabase() {
         print("=== DEBUG: Database Inspection ===")
@@ -694,4 +695,5 @@ class DatabaseManager {
             print("Error getting updated state: \(error)")
         }
     }
+    #endif
 }

@@ -824,54 +824,12 @@ public class LLMBridge: ObservableObject {
     }
     
     private func processStreamLine(_ line: String) async {
-        var jsonLine = line
-        
-        if target == .lmstudio {
-            
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                if jsonLine == "[DONE]" || jsonLine.isEmpty { 
-                    return
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        if target == .claude {
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                if jsonLine == "[DONE]" || jsonLine.isEmpty {
-                    return
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        if target == .openai {
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                if jsonLine == "[DONE]" || jsonLine.isEmpty {
-                    return
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        guard !jsonLine.isEmpty,
-              let data = jsonLine.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        // Use SSEParser to handle provider-specific SSE format
+        guard let json = SSEParser.parseLineToJSON(line, target: target) else {
             return
         }
-        
+
+        // Process the parsed JSON based on provider
         switch target {
         case .ollama:
             await processOllamaStream(json)
@@ -982,56 +940,12 @@ public class LLMBridge: ObservableObject {
     }
     
     private func processStreamLineWithContinuation(_ line: String, continuation: AsyncThrowingStream<String, Error>.Continuation) async {
-        var jsonLine = line
-        
-        if target == .lmstudio {
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if jsonLine == "[DONE]" || jsonLine.isEmpty { 
-                    return 
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        if target == .claude {
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if jsonLine == "[DONE]" || jsonLine.isEmpty {
-                    return
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        if target == .openai {
-            if line.hasPrefix("data: ") {
-                jsonLine = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
-                
-                if jsonLine == "[DONE]" || jsonLine.isEmpty {
-                    return
-                }
-            } else if line.hasPrefix("event:") || line.hasPrefix(":") || line.isEmpty {
-                return
-            } else if !line.hasPrefix("{") {
-                return
-            }
-        }
-        
-        guard !jsonLine.isEmpty,
-              let data = jsonLine.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        // Use SSEParser to handle provider-specific SSE format
+        guard let json = SSEParser.parseLineToJSON(line, target: target) else {
             return
         }
-        
+
+        // Process the parsed JSON based on provider
         switch target {
         case .ollama:
             await processOllamaStreamWithContinuation(json, continuation: continuation)

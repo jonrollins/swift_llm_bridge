@@ -2,10 +2,13 @@ import Foundation
 
 @MainActor
 class SidebarViewModel: ObservableObject {
-    static let shared = SidebarViewModel() 
-    
+    static let shared = SidebarViewModel()
+
     @Published var chatTitles: [ChatTitle] = []
-    
+
+    /// Initializer - public for testing, but prefer using .shared singleton
+    init() {}
+
     func loadChatTitles() async {
         do {
             let results = try DatabaseManager.shared.fetchTitles()
