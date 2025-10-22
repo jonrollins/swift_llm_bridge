@@ -38,7 +38,8 @@ class ChatViewModel: ObservableObject {
     @Published var error: Error?
     @Published var showingError = false
 
-    private init() {}
+    /// Initializer - public for testing, but prefer using .shared singleton
+    init() {}
 
     private func normalizedProvider(from string: String) -> LLMProvider? {
         let s = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
